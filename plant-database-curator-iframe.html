@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Curator — Plant Intelligence Database</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060a08;--bg2:#0a0f0c;--bg3:#0d1510;--bg4:#091a14;
+  --bdr:#18312a;--bdrH:#25604a;
+  --tx:#e8f1eb;--txS:#8baa97;--txM:#b8cfc0;
+  --ac:#22d49a;--ac2:#19a97c;
+  --rb:var(--r);--r:13px;
+}
+html,body{scroll-behavior:smooth;margin:0;padding:0;background:#060a08;color:#e8f1eb;font-family:'Instrument Sans',system-ui,sans-serif;min-height:100%}
+#pdBar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--ac2),var(--ac));z-index:9999;width:0%;transition:width .1s linear;pointer-events:none}
+.mesh{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.mesh::before{content:'';position:absolute;width:700px;height:700px;top:-250px;right:-200px;background:radial-gradient(circle,rgba(34,212,154,.045) 0%,transparent 65%);animation:mf 20s ease-in-out infinite}
+.mesh::after{content:'';position:absolute;width:500px;height:500px;bottom:5%;left:-150px;background:radial-gradient(circle,rgba(34,212,154,.03) 0%,transparent 65%);animation:mf 26s ease-in-out infinite reverse}
+@keyframes mf{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(28px,-38px) scale(1.04)}66%{transform:translate(-18px,25px) scale(.97)}}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px 90px;position:relative;z-index:1;background:transparent}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:200;background:rgba(6,10,8,.97) !important;backdrop-filter:blur(14px);border-bottom:1px solid var(--bdr);padding:10px 0}
+.nav-inner{max-width:1240px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-logo{font-family:'Fraunces',serif;font-size:15px;font-weight:600;color:#e8f1eb !important;text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-logo em{color:#22d49a !important;font-style:italic;font-weight:300}
+.nav-pill{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#22d49a !important;border:1px solid rgba(34,212,154,.25);border-radius:20px;padding:4px 12px;white-space:nowrap}
+
+/* HERO */
+.hero{padding:70px 0 48px;background:transparent !important}
+.badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#22d49a !important;border:1px solid rgba(34,212,154,.3);border-radius:20px;padding:5px 13px;margin-bottom:20px;opacity:0;animation:fup .55s ease .1s forwards;background:transparent !important}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:#22d49a;animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+h1{font-family:'Fraunces',serif;font-size:clamp(26px,4vw,50px);font-weight:600;line-height:1.12;margin-bottom:13px;color:#e8f1eb !important;background:transparent !important}
+h1 em{display:block;color:#22d49a !important;font-style:italic;font-weight:300;background:transparent !important}
+.hero-sub{color:#8baa97 !important;font-size:15px;line-height:1.75;max-width:580px;margin-bottom:36px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #18312a;border-radius:13px;overflow:hidden;margin-bottom:44px;background:#0a0f0c !important}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#0a0f0c !important;padding:18px 12px;text-align:center;border-right:1px solid #18312a}
+.stat:last-child{border-right:none}
+@media(max-width:600px){.stat:nth-child(2){border-right:none}.stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid #18312a}}
+.snum{font-family:'Fraunces',serif;font-size:30px;font-weight:600;color:#22d49a !important;display:block}
+.slabel{font-size:11px;color:#8baa97 !important;letter-spacing:.04em;margin-top:3px;display:block}
+
+/* FILTER PANEL */
+.filters{background:#0a0f0c !important;border:1px solid #18312a;border-radius:13px;padding:22px;margin-bottom:30px;transition:border-color .22s}
+.filters:focus-within{border-color:var(--bdrH)}
+.fhead{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.forb{width:7px;height:7px;border-radius:50%;background:var(--ac);animation:pulse 2s ease-in-out infinite}
+.flbl{font-size:10px;letter-spacing:.12em;color:var(--ac);font-weight:600;text-transform:uppercase}
+.fsearch{width:100%;padding:11px 15px;background:#0d1510 !important;border:1px solid #18312a;border-radius:9px;color:#e8f1eb !important;font-family:'Instrument Sans',sans-serif;font-size:14px;margin-bottom:14px;transition:border-color .2s;outline:none}
+.fsearch::placeholder{color:var(--txS)}
+.fsearch:focus{border-color:var(--bdrH)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-bottom:14px}
+.fw label{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txS);margin-bottom:4px}
+.fsel{width:100%;padding:8px 26px 8px 10px;background:#0d1510 !important;border:1px solid #18312a;border-radius:7px;color:#b8cfc0 !important;font-family:'Instrument Sans',sans-serif;font-size:12px;cursor:pointer;outline:none;transition:border-color .2s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2322d49a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.fsel:focus{border-color:var(--bdrH)}
+.fsel option{background:#0d1510;color:var(--tx)}
+.ffoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.fcount{font-size:13px;color:var(--txS)}
+.fcount strong{color:var(--ac)}
+.freset{padding:6px 14px;background:transparent;border:1px solid var(--bdrH);border-radius:20px;color:var(--txS);font-family:'Instrument Sans',sans-serif;font-size:11px;cursor:pointer;letter-spacing:.05em;transition:all .2s}
+.freset:hover{background:rgba(34,212,154,.06);color:var(--ac)}
+
+/* SECTIONS */
+.section{margin-bottom:28px}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-radius:13px 13px 0 0;cursor:pointer;user-select:none;border:1px solid #18312a;border-bottom:none;transition:all .2s;background:#060a08 !important;color:#e8f1eb !important}
+.sec-hd:hover{border-color:var(--bdrH);background:rgba(34,212,154,.025)}
+.sec-hd.clpsd{border-radius:var(--r);border-bottom:1px solid var(--bdr)}
+.sec-left{display:flex;align-items:center;gap:12px}
+.sec-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ico-b{background:rgba(34,212,154,.1);border:1px solid rgba(34,212,154,.18)}
+.ico-i{background:rgba(90,176,247,.1);border:1px solid rgba(90,176,247,.18)}
+.ico-a{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.18)}
+.ico-e{background:rgba(245,101,101,.1);border:1px solid rgba(245,101,101,.18)}
+.sec-title{font-family:'Fraunces',serif;font-size:16px;font-weight:600;color:#e8f1eb !important}
+.sec-sub{font-size:11px;color:var(--txS);margin-top:1px}
+.sec-pill{font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid var(--bdr);color:var(--txS)}
+.sec-tog{font-size:14px;color:var(--txS);transition:transform .3s ease}
+.sec-hd.clpsd .sec-tog{transform:rotate(-90deg)}
+.sec-body{border:1px solid #18312a;border-top:none;border-radius:0 0 13px 13px;padding:16px;background:#0a0f0c !important}
+.sec-body.hidden{display:none}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:13px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+
+/* CARD */
+.card{background:#060a08 !important;border:1px solid #18312a;border-radius:var(--r);opacity:0;transform:translateY(14px);transition:opacity .38s ease,transform .38s ease,border-color .22s,box-shadow .22s;overflow:hidden;cursor:default}
+.card.vis{opacity:1;transform:translateY(0)}
+.card:hover{border-color:var(--bdrH);box-shadow:0 6px 32px rgba(34,212,154,.065)}
+.cacc{height:3px}
+.card.beginner .cacc{background:linear-gradient(90deg,#22d49a,#19c987)}
+.card.intermediate .cacc{background:linear-gradient(90deg,#5ab0f7,#3d8fe0)}
+.card.advanced .cacc{background:linear-gradient(90deg,#f5a623,#d97706)}
+.card.expert .cacc{background:linear-gradient(90deg,#f56565,#e53e3e)}
+.ci{padding:16px}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:2px}
+.cname{font-family:'Fraunces',serif;font-size:14px;font-weight:600;line-height:1.3;flex:1;color:#e8f1eb !important}
+.cdb{font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:20px;flex-shrink:0;border:1px solid;font-weight:600}
+.card.beginner .cdb{color:#22d49a;border-color:rgba(34,212,154,.3);background:rgba(34,212,154,.06)}
+.card.intermediate .cdb{color:#5ab0f7;border-color:rgba(90,176,247,.3);background:rgba(90,176,247,.06)}
+.card.advanced .cdb{color:#f5a623;border-color:rgba(245,166,35,.3);background:rgba(245,166,35,.06)}
+.card.expert .cdb{color:#f56565;border-color:rgba(245,101,101,.3);background:rgba(245,101,101,.06)}
+.csci{font-style:italic;font-size:10px;color:var(--txS);margin-bottom:11px}
+.cins{background:rgba(34,212,154,.04);border:1px solid rgba(34,212,154,.1);border-left:2px solid var(--ac);border-radius:7px;padding:8px 10px;font-size:11px;color:var(--txS);line-height:1.6;margin-bottom:11px;font-style:italic}
+.cparams{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:11px}
+.cparam{background:#0a0f0c !important;border:1px solid #18312a;border-radius:6px;padding:5px 8px}
+.cplbl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txS)}
+.cpval{font-size:11px;color:#e8f1eb !important;font-weight:500;margin-top:1px}
+/* HEIGHT ROW */
+.hrow{background:rgba(34,212,154,.035);border:1px solid rgba(34,212,154,.1);border-radius:7px;padding:8px 10px;margin-bottom:11px}
+.hrow-top{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.hico{font-size:12px;color:var(--ac);flex-shrink:0}
+.hlbl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txS);flex-shrink:0}
+.hbw{flex:1;background:var(--bg3);border-radius:3px;height:5px;overflow:hidden;position:relative}
+.hb{height:100%;background:linear-gradient(90deg,#19a97c,#22d49a,#5fffbf);border-radius:3px;width:var(--hw,0%);transform:scaleX(0);transform-origin:left;transition:transform .95s cubic-bezier(.16,1,.3,1) .15s}
+.card.vis .hb{transform:scaleX(1)}
+.hval{font-size:10px;color:var(--ac);font-weight:600;flex-shrink:0;white-space:nowrap;min-width:42px;text-align:right}
+.hscale{display:flex;justify-content:space-between;padding:0 2px}
+.hscale span{font-size:8px;color:rgba(139,170,151,.45);letter-spacing:.03em}
+/* TAGS */
+.ctags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.ctag{font-size:9px;letter-spacing:.05em;padding:3px 8px;border-radius:20px;border:1px solid var(--bdr);color:var(--txS)}
+.clbadge{display:inline-flex;align-items:center;gap:4px;font-size:9px;letter-spacing:.07em;color:var(--ac2);border:1px solid rgba(34,212,154,.14);border-radius:5px;padding:3px 7px;background:rgba(34,212,154,.035)}
+.clbadge::before{content:'◈';font-size:8px}
+
+/* DIVIDER + CTA */
+.div{border:none;border-top:1px solid var(--bdr);margin:36px 0}
+.cta{background:#091a14 !important;border:1px solid rgba(34,212,154,.18);border-radius:14px;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:18px}
+.cta h3{font-family:'Fraunces',serif;font-size:19px;margin-bottom:4px}
+.cta p{color:var(--txS);font-size:12px}
+.cta-btn{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;border-radius:9px;background:var(--ac);color:#060a08;font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:600;text-decoration:none;transition:all .18s;flex-shrink:0}
+.cta-btn:hover{background:#1fc48e;transform:translateY(-1px)}
+.arr{transition:transform .18s}
+.cta-btn:hover .arr{transform:translateX(3px)}
+
+/* LEVEL */
+#lvl{position:fixed;bottom:18px;right:14px;background:#0a0f0c;border:1px solid #25604a;border-radius:10px;padding:8px 13px;font-size:11px;color:#8baa97;z-index:9998;pointer-events:none;font-family:'Instrument Sans',sans-serif}
+
+/* HERO ANIM */
+@keyframes fup{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+h1{opacity:0;animation:fup .55s ease .22s forwards}
+.hero-sub{opacity:0;animation:fup .55s ease .36s forwards}
+.stats{opacity:0;animation:fup .55s ease .48s forwards}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:48px 20px;color:var(--txS)}
+.empty strong{display:block;font-family:'Fraunces',serif;font-size:22px;color:var(--txM);margin-bottom:8px}
+
+@media(max-width:480px){.cta{flex-direction:column}.cta-btn{width:100%;justify-content:center}}
+</style>
+  <!-- iframe friendly -->
+  <meta name="robots" content="noindex">
+  <script>
+    // Tell parent window our height so iframe can auto-resize
+    function postHeight(){
+      var h = document.body ? document.body.scrollHeight : 0;
+      if(h) window.parent.postMessage({type:'resize',height:h},'*');
+    }
+    // Wait for DOM before attaching MutationObserver
+    function initResizeObserver(){
+      postHeight();
+      window.addEventListener('resize', postHeight);
+      if(document.body){
+        new MutationObserver(postHeight).observe(document.body,{childList:true,subtree:true});
+      }
+    }
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', initResizeObserver);
+    } else {
+      initResizeObserver();
+    }
+    window.addEventListener('load', postHeight);
+  </script>
+</head>
+<body style="margin:0;padding:0;overflow-x:hidden">
+<div id="pdBar"></div>
+<div class="mesh"></div>
+<div id="lvl">Level: <strong style="color:#22d49a">Explorer</strong></div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">The Curator <em>— Plant Database</em></a>
+    <span class="nav-pill" id="navCount"></span>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="badge"><div class="badge-dot"></div> Intelligence Database v3.0</div>
+    <h1>The Aquascaper's<em>Plant Intelligence Bible</em></h1>
+    <p class="hero-sub">262 verified species across 4 difficulty tiers — scored from lived experience in real tanks, not textbooks. Filter by care level, category, light, CO₂, size, and water chemistry.</p>
+    <div class="stats">
+      <div class="stat"><span class="snum" data-end="262">0</span><span class="slabel">Species Documented</span></div>
+      <div class="stat"><span class="snum" data-end="4">0</span><span class="slabel">Difficulty Tiers</span></div>
+      <div class="stat"><span class="snum" data-end="12">0</span><span class="slabel">Plant Categories</span></div>
+      <div class="stat"><span class="snum" data-end="100" data-sfx="%">0</span><span class="slabel">Lab Verified</span></div>
+    </div>
+  </header>
+
+  <div class="filters">
+    <div class="fhead"><div class="forb"></div><span class="flbl">Filter Intelligence</span></div>
+    <input type="text" id="fsearch" class="fsearch" placeholder="Search species, scientific name, or trait…" autocomplete="off" spellcheck="false" aria-label="Search plants">
+    <div class="fgrid">
+      <div class="fw"><label for="fdiff">Difficulty</label>
+        <select class="fsel" id="fdiff" aria-label="Filter by difficulty">
+          <option value="all">All Levels</option>
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+          <option value="expert">Expert</option>
+        </select></div>
+      <div class="fw"><label for="fcat">Category</label>
+        <select class="fsel" id="fcat" aria-label="Filter by category">
+          <option value="all">All Types</option>
+          <option value="moss">Moss</option>
+          <option value="anubias">Anubias</option>
+          <option value="fern">Fern</option>
+          <option value="stem">Stem Plant</option>
+          <option value="carpet">Carpet</option>
+          <option value="floater">Floater</option>
+          <option value="cryptocoryne">Cryptocoryne</option>
+          <option value="bucephalandra">Bucephalandra</option>
+          <option value="eriocaulon">Eriocaulon</option>
+        </select></div>
+      <div class="fw"><label for="flight">Light</label>
+        <select class="fsel" id="flight" aria-label="Filter by light requirement">
+          <option value="all">Any Light</option>
+          <option value="low">Low Light</option>
+          <option value="medium">Medium Light</option>
+          <option value="high">High Light</option>
+        </select></div>
+      <div class="fw"><label for="fco2">CO₂</label>
+        <select class="fsel" id="fco2" aria-label="Filter by CO2 requirement">
+          <option value="all">Any CO₂</option>
+          <option value="optional">Optional / No</option>
+          <option value="recommended">Recommended</option>
+          <option value="required">Required</option>
+        </select></div>
+      <div class="fw"><label for="fsize">Size at Maturity</label>
+        <select class="fsel" id="fsize" aria-label="Filter by plant size">
+          <option value="all">Any Size</option>
+          <option value="nano">Nano (&lt;8cm)</option>
+          <option value="small">Small (8–15cm)</option>
+          <option value="medium">Medium (15–35cm)</option>
+          <option value="large">Large (35cm+)</option>
+        </select></div>
+      <div class="fw"><label for="fhard">Water Hardness</label>
+        <select class="fsel" id="fhard" aria-label="Filter by water hardness">
+          <option value="all">Any Water</option>
+          <option value="soft">Soft Water</option>
+          <option value="medium">Medium Hard</option>
+          <option value="hard">Hard Water</option>
+        </select></div>
+    </div>
+    <div class="ffoot">
+      <div class="fcount">Showing <strong id="fcount">—</strong> species</div>
+      <button class="freset" onclick="resetAll()">↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="section" id="s-beginner">
+    <div class="sec-hd" onclick="toggleSec(this)">
+      <div class="sec-left"><div class="sec-ico ico-b">🌱</div>
+        <div><div class="sec-title">Beginner Plants</div><div class="sec-sub">Forgiving species — build real confidence without frustration</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:11px"><span class="sec-pill" id="pill-beginner"></span><span class="sec-tog">▾</span></div>
+    </div>
+    <div class="sec-body" id="b-beginner"><div class="grid" id="g-beginner"></div></div>
+  </div>
+
+  <div class="section" id="s-intermediate">
+    <div class="sec-hd" onclick="toggleSec(this)">
+      <div class="sec-left"><div class="sec-ico ico-i">🌿</div>
+        <div><div class="sec-title">Intermediate Plants</div><div class="sec-sub">Reward consistent care — the gateway to high-tech tanks</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:11px"><span class="sec-pill" id="pill-intermediate"></span><span class="sec-tog">▾</span></div>
+    </div>
+    <div class="sec-body" id="b-intermediate"><div class="grid" id="g-intermediate"></div></div>
+  </div>
+
+  <div class="section" id="s-advanced">
+    <div class="sec-hd" onclick="toggleSec(this)">
+      <div class="sec-left"><div class="sec-ico ico-a">🔥</div>
+        <div><div class="sec-title">Advanced Plants</div><div class="sec-sub">CO₂, precision dosing, and patience — competition-grade beauty awaits</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:11px"><span class="sec-pill" id="pill-advanced"></span><span class="sec-tog">▾</span></div>
+    </div>
+    <div class="sec-body" id="b-advanced"><div class="grid" id="g-advanced"></div></div>
+  </div>
+
+  <div class="section" id="s-expert">
+    <div class="sec-hd" onclick="toggleSec(this)">
+      <div class="sec-left"><div class="sec-ico ico-e">💎</div>
+        <div><div class="sec-title">Expert Plants</div><div class="sec-sub">For the obsessed — ultra-rare, ultra-demanding, utterly stunning</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:11px"><span class="sec-pill" id="pill-expert"></span><span class="sec-tog">▾</span></div>
+    </div>
+    <div class="sec-body" id="b-expert"><div class="grid" id="g-expert"></div></div>
+  </div>
+
+  <hr class="div">
+  <div class="cta">
+    <div><h3>Build smarter. Scape better.</h3><p>Join The Curator — Australia's intelligence platform for serious planted tank enthusiasts.</p></div>
+    <a href="#" class="cta-btn">Join Free Now <span class="arr">→</span></a>
+  </div>
+</div>
+
+<script>
+const P=[{name:'Java Moss',sci:'Taxiphyllum barbieri',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:5,hp:0.08,temp:'18-30°C',ph:'5.0-8.0',co2d:'Lol No',badge:'Lab-Verified: Indestructible',tags:['Shrimp Heaven','Aquascaping Glue','Guilt-Free'],ins:'Survives everything except being thrown in the garbage... and even then, probably not'},
+{name:'Anubias Nana',sci:'Anubias barteri var. nana',diff:'beginner',cat:'anubias',light:'low',co2:'optional',size:'small',hard:'all',h:10,hp:0.18,temp:'22-28°C',ph:'6.0-7.5',co2d:'What\'s That?',badge:'Lab-Verified: Algae-Resistant Champion',tags:['Slow Grower','Epiphyte','Set &amp; Forget'],ins:'The plant that judges you for having CO2 injection. \'I don\'t need your fancy gases, human.\''},
+{name:'Java Fern',sci:'Microsorum pteropus',diff:'beginner',cat:'fern',light:'low',co2:'optional',size:'medium',hard:'all',h:30,hp:0.55,temp:'20-28°C',ph:'6.0-7.5',co2d:'Nope',badge:'Lab-Verified: Bulletproof Biology',tags:['Baby Plantlets','Propagation Machine','Hardy AF'],ins:'That weird kid in class who ate paste but somehow got straight A\'s'},
+{name:'Marimo Moss Ball',sci:'Aegagropila linnaei',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:8,hp:0.14,temp:'5-30°C',ph:'6.0-8.0',co2d:'LOL',badge:'Lab-Verified: Immortal Sphere',tags:['Shrimp Toy','Zero Effort','Meme Status'],ins:'The pet rock of the plant world, except it\'s actually alive. Somehow.'},
+{name:'Amazon Sword',sci:'Echinodorus grisebachii',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:55,hp:0.95,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Root Tab Addict',tags:['Centerpiece Plant','Heavy Root Feeder','Big Boi'],ins:'The only sword that wins battles through aggressive photosynthesis'},
+{name:'Cryptocoryne Wendtii',sci:'Cryptocoryne wendtii',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'medium',h:15,hp:0.27,temp:'22-28°C',ph:'6.0-7.5',co2d:'Nah',badge:'Lab-Verified: Crypt Melt Survivor',tags:['Drama Queen','Actually Hardy','Color Morph'],ins:'Will melt if you: move it, look at it wrong, change your water brand, sneeze near the tank'},
+{name:'Hornwort',sci:'Ceratophyllum demersum',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:60,hp:1.0,temp:'15-30°C',ph:'6.0-7.5',co2d:'No Thanks',badge:'Lab-Verified: Algae Destroyer',tags:['Fast Grower','Floating/Planted','Needles Everywhere'],ins:'The plant equivalent of that friend who shows up uninvited and won\'t leave'},
+{name:'Water Sprite',sci:'Ceratopteris thalictroides',diff:'beginner',cat:'floater',light:'medium',co2:'optional',size:'medium',hard:'all',h:25,hp:0.45,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Versatility King',tags:['Planted OR Floating','Baby Plantlets','Nitrate Vacuum'],ins:'Can\'t decide if it wants to be planted or floating, so it does both. Overachiever.'},
+{name:'Anubias Barteri',sci:'Anubias barteri',diff:'beginner',cat:'anubias',light:'low',co2:'optional',size:'medium',hard:'all',h:25,hp:0.45,temp:'22-28°C',ph:'6.0-7.5',co2d:'Nope',badge:'Lab-Verified: Tank Tested Tough',tags:['Larger Anubias','Epiphyte','Bulletproof'],ins:'Big brother to Nana. Same attitude, bigger leaves, still judges your equipment choices.'},
+{name:'Duckweed',sci:'Lemna minor',diff:'beginner',cat:'floater',light:'low',co2:'optional',size:'nano',hard:'all',h:2,hp:0.04,temp:'15-30°C',ph:'5.0-9.0',co2d:'HAHA No',badge:'Lab-Verified: Unstoppable Force',tags:['Spreads Aggressively','Nitrate Absorber','You\'ve Been Warned'],ins:'The herpes of the aquarium world. Once you have it, you HAVE IT. Forever.'},
+{name:'Vallisneria Spiralis',sci:'Vallisneria spiralis',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'hard',h:60,hp:1.0,temp:'20-28°C',ph:'6.5-8.0',co2d:'Not Needed',badge:'Lab-Verified: Hard Water Champion',tags:['Tall Background','Runners','Easy Care'],ins:'Grows so tall it thinks it\'s bamboo. Loves hard water. Basically aquatic grass on steroids.'},
+{name:'Elodea (Anacharis)',sci:'Egeria densa',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:50,hp:0.91,temp:'10-26°C',ph:'6.5-7.5',co2d:'Nah',badge:'Lab-Verified: Classroom Survivor',tags:['Fast Growth','Oxygenator','Beginner Proof'],ins:'The plant your science teacher used in biology class. Still can\'t kill it.'},
+{name:'Cryptocoryne Lucens',sci:'Cryptocoryne lucens',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'all',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Melt-Resistant',tags:['Bright Green','Compact','Low Maintenance'],ins:'The Crypt that actually forgot how to melt. Someone tell the others.'},
+{name:'African Water Fern (Bolbitis)',sci:'Bolbitis heudelotii',diff:'beginner',cat:'fern',light:'low',co2:'optional',size:'medium',hard:'soft',h:28,hp:0.51,temp:'20-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Flow Lover',tags:['Dark Green','Epiphyte','Elegant'],ins:'Java Fern\'s cooler African cousin. Same vibes, darker leaves, still can\'t be killed.'},
+{name:'Christmas Moss',sci:'Vesicularia montagnei',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:4,hp:0.07,temp:'18-28°C',ph:'5.5-7.5',co2d:'Nope',badge:'Lab-Verified: Triangle Growth',tags:['Unique Pattern','Shrimp Safe','Easy'],ins:'Grows in triangles like tiny Christmas trees. Ho ho no effort required.'},
+{name:'Dwarf Sagittaria',sci:'Sagittaria subulata',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'small',hard:'all',h:15,hp:0.27,temp:'20-28°C',ph:'6.0-8.0',co2d:'Optional',badge:'Lab-Verified: Beginner Carpet',tags:['Grass-Like','Runners','Forgiving'],ins:'Tiny grass that actually carpets without making you cry. Revolutionary concept.'},
+{name:'Amazon Frogbit',sci:'Limnobium laevigatum',diff:'beginner',cat:'floater',light:'medium',co2:'optional',size:'small',hard:'all',h:4,hp:0.07,temp:'18-30°C',ph:'6.0-7.5',co2d:'Lol',badge:'Lab-Verified: Nitrate Destroyer',tags:['Long Roots','Fast Spreader','Shrimp Love'],ins:'Tiny lily pads that multiply like tribbles. Adorable until it covers everything.'},
+{name:'Anubias Nana Petite',sci:'Anubias barteri var. nana \'Petite\'',diff:'beginner',cat:'anubias',light:'low',co2:'optional',size:'nano',hard:'all',h:5,hp:0.09,temp:'22-28°C',ph:'6.0-7.5',co2d:'No',badge:'Lab-Verified: Nano Tank Star',tags:['Tiny Leaves','Hardscape Perfect','Slow Grower'],ins:'Regular Anubias Nana asked \'can you make me cuter?\' This is the result.'},
+{name:'Cryptocoryne Parva',sci:'Cryptocoryne parva',diff:'beginner',cat:'cryptocoryne',light:'medium',co2:'optional',size:'nano',hard:'soft',h:6,hp:0.11,temp:'22-28°C',ph:'6.0-7.5',co2d:'Helps',badge:'Lab-Verified: Slowest Crypt',tags:['Tiny','Foreground','Patience Test'],ins:'The smallest Crypt. Grows so slow you\'ll think it\'s fake. It\'s not. Just patient.'},
+{name:'Peacock Moss',sci:'Taxiphyllum sp.',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:4,hp:0.07,temp:'18-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Fan Pattern',tags:['Unique Spread','Beautiful','Easy'],ins:'Spreads like a peacock\'s tail. Doesn\'t require the attitude maintenance though.'},
+{name:'Water Wisteria',sci:'Hygrophila difformis',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:40,hp:0.73,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Adaptive Growth',tags:['Variable Leaves','Fast Growth','Beginner Friendly'],ins:'Changes leaf shape based on mood. Aquatic shapeshifter vibes.'},
+{name:'Red Root Floater',sci:'Phyllanthus fluitans',diff:'beginner',cat:'floater',light:'high',co2:'optional',size:'nano',hard:'soft',h:2,hp:0.04,temp:'22-28°C',ph:'6.5-7.5',co2d:'No',badge:'Lab-Verified: High Light Reward',tags:['Red Coloration','Beautiful Roots','Instagram Famous'],ins:'Turns red under high light like it\'s blushing. Those roots though... *chef\'s kiss*'},
+{name:'Cabomba',sci:'Cabomba caroliniana',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'soft',h:50,hp:0.91,temp:'22-28°C',ph:'6.5-7.5',co2d:'Helpful',badge:'Lab-Verified: Fast Grower',tags:['Feathery','Fast','Background'],ins:'Feathery and fast. Like a green firework that never stops exploding.'},
+{name:'Cryptocoryne Willisii',sci:'Cryptocoryne × willisii',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'all',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-8.0',co2d:'Nope',badge:'Lab-Verified: Hardy Hybrid',tags:['Small','Compact','Resilient'],ins:'Will is strong with this one. Won\'t die easily.'},
+{name:'Salvinia',sci:'Salvinia natans',diff:'beginner',cat:'floater',light:'low',co2:'optional',size:'nano',hard:'all',h:2,hp:0.04,temp:'20-30°C',ph:'6.0-8.0',co2d:'Lol No',badge:'Lab-Verified: Surface Coverage',tags:['Hairy Leaves','Fast Spreader','Easy'],ins:'Tiny floater with hair on leaves. Because plants can have bad hair days too.'},
+{name:'Anubias Gracilis',sci:'Anubias gracilis',diff:'beginner',cat:'anubias',light:'low',co2:'optional',size:'medium',hard:'all',h:30,hp:0.55,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Narrow Beauty',tags:['Narrow Leaves','Epiphyte','Hardy'],ins:'Graceful and gracious about your terrible water parameters'},
+{name:'Rotala Green',sci:'Rotala rotundifolia \'Green\'',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:25,hp:0.45,temp:'20-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Forgiving Variant',tags:['Bright Green','Fast Growth','Beginner Friendly'],ins:'Rotala for people who aren\'t ready for the red version\'s attitude'},
+{name:'Cryptocoryne Undulata',sci:'Cryptocoryne undulata',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'medium',hard:'all',h:20,hp:0.36,temp:'22-28°C',ph:'6.0-8.0',co2d:'Optional',badge:'Lab-Verified: Undulating Beauty',tags:['Wavy Edges','Green/Brown','Forgiving'],ins:'Wavy leaves like it\'s riding gentle ocean waves. Actually quite chill.'},
+{name:'Guppy Grass',sci:'Najas guadalupensis',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:40,hp:0.73,temp:'18-30°C',ph:'6.0-8.0',co2d:'No',badge:'Lab-Verified: Breeding Tank MVP',tags:['Fast Growth','Fry Safe','Bulletproof'],ins:'Named for guppies. Multiplies as fast as guppies. Coincidence? Nope.'},
+{name:'Taiwan Moss',sci:'Taxiphyllum alternans',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:5,hp:0.09,temp:'18-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Triangle Branching',tags:['Branching','Dense','Easy'],ins:'Branchy moss that looks fancy. Isn\'t fancy about requirements though.'},
+{name:'Temple Plant',sci:'Hygrophila corymbosa',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:40,hp:0.73,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Beginner Stem',tags:['Large Leaves','Fast Growth','Background'],ins:'Grows like it\'s worshiping the aquarium gods. Which are you, apparently.'},
+{name:'Hornwort (Soft)',sci:'Ceratophyllum submersum',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:60,hp:1.0,temp:'15-30°C',ph:'6.0-8.0',co2d:'No',badge:'Lab-Verified: Algae Fighter',tags:['Soft Texture','Fast','No Roots'],ins:'Softer than regular hornwort. Still sheds everywhere. No escaping the needles.'},
+{name:'Cryptocoryne Retrospiralis',sci:'Cryptocoryne retrospiralis',diff:'beginner',cat:'cryptocoryne',light:'medium',co2:'optional',size:'large',hard:'hard',h:45,hp:0.82,temp:'22-28°C',ph:'6.5-8.0',co2d:'Optional',badge:'Lab-Verified: Hard Water Tolerant',tags:['Long Leaves','Twisted','Hardy'],ins:'Spirals backwards. Like looking back at your aquascaping mistakes.'},
+{name:'Najas Grass',sci:'Najas indica',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:28,hp:0.51,temp:'20-30°C',ph:'6.0-8.0',co2d:'No',badge:'Lab-Verified: Rapid Growth',tags:['Fast','Hardy','Background'],ins:'Like guppy grass but slightly more sophisticated. Still grows like weeds.'},
+{name:'Ludwigia Palustris',sci:'Ludwigia palustris',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:28,hp:0.51,temp:'18-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Color Without Demands',tags:['Red Undersides','Hardy','Beginner Color'],ins:'Green on top, red underneath. Two-faced but in a good way.'},
+{name:'Anubias Hastifolia',sci:'Anubias hastifolia',diff:'beginner',cat:'anubias',light:'low',co2:'optional',size:'large',hard:'all',h:45,hp:0.82,temp:'22-28°C',ph:'6.0-7.5',co2d:'Nope',badge:'Lab-Verified: Giant Variant',tags:['Large','Arrow Leaves','Hardy'],ins:'The giant Anubias. Slowly but surely takes over your tank.'},
+{name:'Rotala Singapore',sci:'Rotala rotundifolia \'Singapore\'',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:25,hp:0.45,temp:'22-30°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Heat Tolerant',tags:['Compact','Warm Water','Easy'],ins:'From Singapore. Handles heat like a tropical boss.'},
+{name:'Cryptocoryne Affinis',sci:'Cryptocoryne affinis',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'all',h:15,hp:0.27,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Reliable Crypt',tags:['Hammer Texture','Hardy','Variable Color'],ins:'Has an affinity for not dying. Refreshing in the Crypt family.'},
+{name:'Java Fern Narrow Leaf',sci:'Microsorum pteropus \'Narrow\'',diff:'beginner',cat:'fern',light:'low',co2:'optional',size:'medium',hard:'all',h:25,hp:0.45,temp:'20-28°C',ph:'6.0-7.5',co2d:'No',badge:'Lab-Verified: Narrow Variant',tags:['Narrow Leaves','Elegant','Hardy'],ins:'Java Fern went on a diet. Still can\'t be killed.'},
+{name:'Micro Sword',sci:'Lilaeopsis brasiliensis',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'nano',hard:'all',h:8,hp:0.14,temp:'18-28°C',ph:'6.5-7.5',co2d:'Helpful',badge:'Lab-Verified: Beginner Grass',tags:['Grass-Like','Foreground','Slow Spread'],ins:'Tiny swords for tiny warriors (shrimp)'},
+{name:'String Moss',sci:'Leptodictyum riparium',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:6,hp:0.11,temp:'15-28°C',ph:'6.0-8.0',co2d:'Optional',badge:'Lab-Verified: Stringy Growth',tags:['Stringy','Easy','Unique'],ins:'Grows in strings. Attach to hardscape or let it dangle. Your choice.'},
+{name:'Moneywort',sci:'Bacopa monnieri',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:30,hp:0.55,temp:'20-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Reliable Stem',tags:['Round Leaves','Fast Growth','Easy'],ins:'Won\'t make you money, but won\'t cost you much effort either'},
+{name:'Cryptocoryne Beckettii',sci:'Cryptocoryne beckettii',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'all',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Hardy Variety',tags:['Brown-Green','Compact','Reliable'],ins:'Named after someone. Still melts. But comes back like a champ.'},
+{name:'Anubias Congensis',sci:'Anubias congensis',diff:'beginner',cat:'anubias',light:'low',co2:'optional',size:'medium',hard:'all',h:25,hp:0.45,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Rainforest Hardy',tags:['Elongated Leaves','Epiphyte','Tough'],ins:'From Congo. Tough as the rainforest it comes from.'},
+{name:'Salvinia Minima',sci:'Salvinia minima',diff:'beginner',cat:'floater',light:'low',co2:'optional',size:'nano',hard:'all',h:2,hp:0.04,temp:'20-30°C',ph:'6.0-8.0',co2d:'No',badge:'Lab-Verified: Easy Floater',tags:['Small','Fast','Low Maintenance'],ins:'Minimal effort required. Maximal surface coverage achieved.'},
+{name:'Parrot Feather',sci:'Myriophyllum aquaticum',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:45,hp:0.82,temp:'18-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Emersed Champion',tags:['Feathery','Emersed Growth','Hardy'],ins:'Feathery like a parrot. Doesn\'t squawk when you forget to dose though.'},
+{name:'Anubias Lanceolata',sci:'Anubias lanceolata',diff:'beginner',cat:'anubias',light:'low',co2:'optional',size:'large',hard:'all',h:40,hp:0.73,temp:'22-28°C',ph:'6.0-7.5',co2d:'Nope',badge:'Lab-Verified: Lance Leaf',tags:['Lance Leaves','Large','Bulletproof'],ins:'Lance-shaped leaves. Lances your algae problems. Metaphorically.'},
+{name:'Riccia Fluitans',sci:'Riccia fluitans',diff:'beginner',cat:'moss',light:'medium',co2:'optional',size:'nano',hard:'all',h:3,hp:0.05,temp:'18-30°C',ph:'6.0-8.0',co2d:'Helpful',badge:'Lab-Verified: Versatile Liverwort',tags:['Floating/Carpet','Bright Green','Pearling Machine'],ins:'Floats naturally. Attach to rocks for carpet. Identity confused but we love it anyway.'},
+{name:'Dwarf Hygro',sci:'Hygrophila polysperma',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:30,hp:0.55,temp:'20-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Speed Demon',tags:['Super Fast','Easy Propagation','Hardy'],ins:'Grows so fast it makes other stems look lazy. Basically aquatic bamboo.'},
+{name:'Cryptocoryne Lutea',sci:'Cryptocoryne × lutea',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'all',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-8.0',co2d:'Optional',badge:'Lab-Verified: Hybrid Vigor',tags:['Yellow-Green','Hardy','Compact'],ins:'Yellow-green hybrid. Less drama than purebred Crypts.'},
+{name:'Java Fern Trident',sci:'Microsorum pteropus \'Trident\'',diff:'beginner',cat:'fern',light:'low',co2:'optional',size:'medium',hard:'all',h:20,hp:0.36,temp:'20-28°C',ph:'6.0-7.5',co2d:'No',badge:'Lab-Verified: Forked Variant',tags:['Forked Leaves','Unique','Hardy'],ins:'Three-pronged leaves. Like Aquaman\'s weapon but less effective against Atlanteans.'},
+{name:'Water Lettuce',sci:'Pistia stratiotes',diff:'beginner',cat:'floater',light:'medium',co2:'optional',size:'medium',hard:'all',h:15,hp:0.27,temp:'22-30°C',ph:'6.5-7.5',co2d:'Nope',badge:'Lab-Verified: Nutrient Absorber',tags:['Large Floater','Long Roots','Easy'],ins:'Looks like lettuce. Don\'t eat it. Learn from mistakes.'},
+{name:'Cryptocoryne Pontederiifolia',sci:'Cryptocoryne pontederiifolia',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'all',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Easy Crypt',tags:['Heart-Shaped','Green','Reliable'],ins:'Pondering why it\'s so easy to grow? Don\'t question it, just enjoy.'},
+{name:'Subwassertang',sci:'Lomariopsis cf. lineata',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:4,hp:0.07,temp:'18-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Liverwort Oddity',tags:['Unique','Easy','Shrimp Paradise'],ins:'German name means \'underwater algae\'. It\'s not algae. Germans were wrong.'},
+{name:'Brazilian Pennywort',sci:'Hydrocotyle leucocephala',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:50,hp:0.91,temp:'20-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Weed Status',tags:['Coin Leaves','Fast','Invasive'],ins:'Grows like a weed. Because it basically is one.'},
+{name:'Cryptocoryne Nevillii',sci:'Cryptocoryne nevillii',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'nano',hard:'all',h:8,hp:0.14,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Nano Crypt',tags:['Tiny','Foreground','Easy'],ins:'Never will this Crypt give you major problems. See what we did there?'},
+{name:'Hairgrass (Dwarf)',sci:'Eleocharis parvula',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'nano',hard:'all',h:8,hp:0.14,temp:'18-28°C',ph:'6.5-7.5',co2d:'Helpful',badge:'Lab-Verified: Carpet Grass',tags:['Short Grass','Carpet','Beginner Option'],ins:'Baby hairgrass. Easier than the tall version. Still needs haircuts (trimming).'},
+{name:'Moss Ball Mix',sci:'Various species',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:6,hp:0.11,temp:'18-28°C',ph:'6.0-7.5',co2d:'No',badge:'Lab-Verified: Easy Texture',tags:['Various Mosses','Easy','Decorative'],ins:'Balls of moss attached to stuff. Revolutionary aquascaping technique.'},
+{name:'Staurogyne Bihar',sci:'Staurogyne sp. \'Bihar\'',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'small',hard:'all',h:10,hp:0.18,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Beginner Friendly',tags:['Compact','Easy','Midground'],ins:'Indian cousin to Repens. Less demanding, still good looking.'},
+{name:'Rotala Rotundifolia',sci:'Rotala rotundifolia',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:30,hp:0.55,temp:'20-28°C',ph:'5.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Color-Change Master',tags:['Dutch Aquarium Star','Fast Growth','Needs Trimming'],ins:'Turns red when happy. Stays green when judging your light setup.'},
+{name:'Bucephalandra \'Kedagang\'',sci:'Bucephalandra sp.',diff:'intermediate',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helps',badge:'Lab-Verified: Collector\'s Dream',tags:['Slow Grower','Iridescent Leaves','Expensive'],ins:'The Hermès bag of aquarium plants. Costs more, grows slower, makes your friends jealous.'},
+{name:'Ludwigia Repens',sci:'Ludwigia repens',diff:'intermediate',cat:'stem',light:'medium',co2:'recommended',size:'medium',hard:'all',h:30,hp:0.55,temp:'22-28°C',ph:'6.0-7.5',co2d:'Yes Please',badge:'Lab-Verified: Iron Indicator',tags:['Red/Green','Nutrient Hog','Statement Plant'],ins:'Goes from green to burgundy faster than your tank chemistry goes from \'perfect\' to \'what happened\''},
+{name:'Pogostemon Helferi (Downoi)',sci:'Pogostemon helferi',diff:'intermediate',cat:'carpet',light:'high',co2:'recommended',size:'small',hard:'soft',h:10,hp:0.18,temp:'20-28°C',ph:'6.0-7.5',co2d:'Highly Recommended',badge:'Lab-Verified: Foreground Star',tags:['Unique Texture','Compact Growth','Aquascaping Gold'],ins:'Looks like tiny lettuce. Grows like it\'s plotting world domination.'},
+{name:'Flame Moss',sci:'Taxiphyllum sp.',diff:'intermediate',cat:'moss',light:'medium',co2:'optional',size:'nano',hard:'all',h:6,hp:0.11,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helpful',badge:'Lab-Verified: Unique Growth Pattern',tags:['Upward Growth','Aquascaping Moss','Slow but Steady'],ins:'Grows upward like it\'s trying to escape your tank. Can\'t blame it.'},
+{name:'Hygrophila Pinnatifida',sci:'Hygrophila pinnatifida',diff:'intermediate',cat:'stem',light:'medium',co2:'recommended',size:'medium',hard:'soft',h:20,hp:0.36,temp:'22-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Versatile Champion',tags:['Creeping Growth','Purple Undersides','Unique'],ins:'The botanical equivalent of that kid who was good at EVERYTHING in high school'},
+{name:'Weeping Moss',sci:'Vesicularia ferriei',diff:'intermediate',cat:'moss',light:'medium',co2:'optional',size:'nano',hard:'all',h:6,hp:0.11,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helpful',badge:'Lab-Verified: Weeping Growth',tags:['Downward Growth','Tree Simulation','Beautiful'],ins:'Hangs down like it\'s dramatically sighing about your water parameters'},
+{name:'Cryptocoryne Balansae',sci:'Cryptocoryne crispatula var. balansae',diff:'intermediate',cat:'cryptocoryne',light:'medium',co2:'optional',size:'large',hard:'all',h:50,hp:0.91,temp:'22-28°C',ph:'6.0-8.0',co2d:'Optional',badge:'Lab-Verified: Tall Crypt',tags:['Wavy Leaves','Background','Hardy Once Settled'],ins:'Long, wavy leaves like an underwater mermaid\'s hair. Will still melt though.'},
+{name:'Bucephalandra \'Brownie\'',sci:'Bucephalandra sp.',diff:'intermediate',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helps',badge:'Lab-Verified: Color Stability',tags:['Brown/Red','Epiphyte','Collector\'s Choice'],ins:'Named after its color, not the dessert. Still sweet though.'},
+{name:'Rotala Indica',sci:'Rotala rotundifolia \'Indica\'',diff:'intermediate',cat:'stem',light:'medium',co2:'recommended',size:'medium',hard:'soft',h:25,hp:0.45,temp:'20-28°C',ph:'5.5-7.0',co2d:'Recommended',badge:'Lab-Verified: Color Morph',tags:['Pink/Red','Fast Growth','Dutch Style'],ins:'Budget Rotala that actually looks expensive under good light'},
+{name:'Hydrocotyle Tripartita',sci:'Hydrocotyle tripartita',diff:'intermediate',cat:'carpet',light:'medium',co2:'recommended',size:'nano',hard:'all',h:8,hp:0.14,temp:'20-28°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Clover Carpet',tags:['Unique Texture','Foreground','Creeping'],ins:'Tiny clovers that carpet. Four-leaf ones bring extra luck (finding them, that is)'},
+{name:'Ambulia',sci:'Limnophila sessiliflora',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'large',hard:'all',h:45,hp:0.82,temp:'22-28°C',ph:'6.5-7.5',co2d:'Recommended',badge:'Lab-Verified: Fast Grower',tags:['Feathery','Dense','Background'],ins:'Feathery leaves that make goldfish think they\'re in a forest'},
+{name:'Phoenix Moss',sci:'Fissidens fontanus',diff:'intermediate',cat:'moss',light:'medium',co2:'optional',size:'nano',hard:'all',h:5,hp:0.09,temp:'18-26°C',ph:'6.0-7.5',co2d:'Helpful',badge:'Lab-Verified: Feathery Pattern',tags:['Unique Structure','Beautiful','Delicate'],ins:'Looks like tiny phoenix feathers. Won\'t rise from ashes if you kill it though.'},
+{name:'Cryptocoryne Spiralis',sci:'Cryptocoryne spiralis',diff:'intermediate',cat:'cryptocoryne',light:'medium',co2:'optional',size:'medium',hard:'all',h:30,hp:0.55,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Twisted Growth',tags:['Spiral Leaves','Mid/Background','Unique'],ins:'Spiraling leaves like it\'s doing yoga underwater'},
+{name:'Bucephalandra \'Blue Velvet\'',sci:'Bucephalandra sp.',diff:'intermediate',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helpful',badge:'Lab-Verified: Iridescent Beauty',tags:['Blue Shimmer','Popular Cultivar','Slow Growth'],ins:'Shimmers blue like a disco ball. Your shrimp will love the dance floor.'},
+{name:'Cardinal Plant',sci:'Lobelia cardinalis',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:30,hp:0.55,temp:'18-26°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Color Variation',tags:['Purple Stems','Emersed Growth','Unique'],ins:'Purple stems, green leaves, red potential. The mood ring of aquatic plants.'},
+{name:'Monte Carlo',sci:'Micranthemum tweediei',diff:'intermediate',cat:'carpet',light:'high',co2:'recommended',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: HC Alternative',tags:['Dense Carpet','Small Leaves','Competition Grade'],ins:'HC Cuba\'s slightly less demanding cousin. Still wants your firstborn, just not your soul.'},
+{name:'River Buttercup',sci:'Ranunculus inundatus',diff:'intermediate',cat:'carpet',light:'high',co2:'recommended',size:'nano',hard:'soft',h:5,hp:0.09,temp:'15-25°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Unique Foreground',tags:['Buttercup Leaves','Rare','Cool Water'],ins:'Tiny buttercup leaves that carpet. Australian, so it grows upside-down. (Not really.)'},
+{name:'Bacopa Caroliniana',sci:'Bacopa caroliniana',diff:'intermediate',cat:'stem',light:'medium',co2:'recommended',size:'medium',hard:'all',h:30,hp:0.55,temp:'20-28°C',ph:'6.5-7.5',co2d:'Recommended',badge:'Lab-Verified: Robust Stem',tags:['Pink Coloration','Thick Leaves','Forgiving'],ins:'Thick leaves that turn pink. Like a succulent decided to go swimming.'},
+{name:'Mini Coral Moss',sci:'Riccardia chamedryfolia',diff:'intermediate',cat:'moss',light:'medium',co2:'optional',size:'nano',hard:'soft',h:4,hp:0.07,temp:'18-26°C',ph:'6.0-7.0',co2d:'Helpful',badge:'Lab-Verified: Liverwort Beauty',tags:['Coral-Like','Delicate','Unique'],ins:'Looks like tiny coral. Actually a liverwort. Identity crisis optional.'},
+{name:'Nesaea Golden',sci:'Nesaea pedicellata \'Golden\'',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:30,hp:0.55,temp:'22-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Golden Hues',tags:['Orange-Gold','Nutrient Heavy','Striking'],ins:'Orange-gold stems that look like sunset. Needs nutrients like it\'s eating for two.'},
+{name:'Mermaid Weed',sci:'Proserpinaca palustris',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:30,hp:0.55,temp:'18-26°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Orange Beauty',tags:['Serrated Leaves','Orange-Red','Unique Texture'],ins:'Serrated leaves turn orange-red. Mermaids wish they looked this good.'},
+{name:'Rotala H\'ra',sci:'Rotala sp. \'H\'ra\'',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:25,hp:0.45,temp:'20-28°C',ph:'5.5-7.0',co2d:'Recommended',badge:'Lab-Verified: Needle Leaves',tags:['Fine Texture','Unique','Green to Pink'],ins:'Looks like tiny pine tree branches. No Christmas ornaments required.'},
+{name:'Red Myrio',sci:'Myriophyllum mattogrossense',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'large',hard:'soft',h:45,hp:0.82,temp:'22-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Red Feathers',tags:['Feathery Red','Fast Growth','Stunning'],ins:'Feathery and red. Like a fancy bird, but underwater and doesn\'t tweet.'},
+{name:'Anubias Coffeefolia',sci:'Anubias barteri \'Coffeefolia\'',diff:'intermediate',cat:'anubias',light:'low',co2:'optional',size:'medium',hard:'all',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.5',co2d:'Nope',badge:'Lab-Verified: Unique Texture',tags:['Hammered Leaves','Epiphyte','Distinctive'],ins:'Textured leaves like coffee beans. Still won\'t wake you up in the morning.'},
+{name:'Fissidens Nobilis',sci:'Fissidens nobilis',diff:'intermediate',cat:'moss',light:'medium',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'18-26°C',ph:'6.0-7.5',co2d:'Helpful',badge:'Lab-Verified: Elite Moss',tags:['Structured','Beautiful','Pricey'],ins:'Fancy Fissidens. So fancy it needs its own genus mention twice.'},
+{name:'Dwarf Baby Tears (HC Cuba)',sci:'Hemianthus callitrichoides',diff:'advanced',cat:'carpet',light:'high',co2:'required',size:'nano',hard:'soft',h:3,hp:0.05,temp:'20-28°C',ph:'6.0-7.0',co2d:'REQUIRED',badge:'Lab-Verified: CO2-Dependent',tags:['Carpet King','Tiny Leaves','Contest Favorite'],ins:'The bonsai tree of carpeting plants. Requires monk-level patience and CO2 addiction.'},
+{name:'Rotala Macrandra',sci:'Rotala macrandra',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:25,hp:0.45,temp:'22-28°C',ph:'5.5-7.0',co2d:'MAX IT',badge:'Lab-Verified: High-Demand Beauty',tags:['Deep Red','Nutrient Diva','Expert Flex'],ins:'Turns blood-red when pampered. Turns to mush when you slack off. No in-between.'},
+{name:'Staurogyne Repens',sci:'Staurogyne repens',diff:'advanced',cat:'carpet',light:'high',co2:'recommended',size:'small',hard:'soft',h:8,hp:0.14,temp:'22-28°C',ph:'6.0-7.5',co2d:'Highly Recommended',badge:'Lab-Verified: Compact Under Light',tags:['Dense Growth','Foreground/Mid','Reliable'],ins:'The carpet plant for people who think HC Cuba is for show-offs'},
+{name:'Cryptocoryne Flamingo',sci:'Cryptocoryne sp.',diff:'advanced',cat:'cryptocoryne',light:'medium',co2:'optional',size:'small',hard:'soft',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helps Color',badge:'Lab-Verified: Rare Color Morph',tags:['Pink!','Tissue Culture','Collector\'s Item'],ins:'Pink leaves that make other aquascapers ask \'wait, that\'s REAL?\''},
+{name:'Utricularia Graminifolia',sci:'Utricularia graminifolia',diff:'advanced',cat:'carpet',light:'high',co2:'required',size:'nano',hard:'soft',h:4,hp:0.07,temp:'18-28°C',ph:'5.0-7.0',co2d:'REQUIRED',badge:'Lab-Verified: Bladderwort Biology',tags:['Carnivorous','Carpet Alternative','Unique'],ins:'Carnivorous plant that eats your patience and micro-organisms. In that order.'},
+{name:'Alternanthera Reineckii Mini',sci:'Alternanthera reineckii \'Mini\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:12,hp:0.22,temp:'22-28°C',ph:'5.5-7.0',co2d:'Maximum',badge:'Lab-Verified: Iron-Dependent Color',tags:['Deep Purple','Compact','Contest Plant'],ins:'Purple, compact, and more demanding than a toddler on a sugar rush'},
+{name:'Pogostemon Erectus',sci:'Pogostemon erectus',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:40,hp:0.73,temp:'20-28°C',ph:'6.0-7.5',co2d:'Required',badge:'Lab-Verified: Unique Structure',tags:['Needle Leaves','Vertical Growth','Stunning'],ins:'Like a bottlebrush, but make it aquatic and demanding'},
+{name:'Limnophila Aromatica',sci:'Limnophila aromatica',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'5.5-7.0',co2d:'Required',badge:'Lab-Verified: Aromatic Beauty',tags:['Purple-Red','Aromatic','Demanding'],ins:'Purple stems that smell like rice paddies. Your tank will smell like Vietnam.'},
+{name:'Cryptocoryne Nurii',sci:'Cryptocoryne nurii',diff:'advanced',cat:'cryptocoryne',light:'medium',co2:'optional',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helpful',badge:'Lab-Verified: Rare Crypt',tags:['Rare','Melt Prone','Beautiful'],ins:'The Crypt that makes other Crypts look easy. Elite melt club member.'},
+{name:'Ludwigia Inclinata \'Cuba\'',sci:'Ludwigia inclinata var. verticillata \'Cuba\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:40,hp:0.73,temp:'22-28°C',ph:'5.5-7.0',co2d:'Maximum',badge:'Lab-Verified: Color Master',tags:['Orange-Yellow','Nutrient Hog','Showstopper'],ins:'Orange-yellow perfection. Also perfection at dying without perfect conditions.'},
+{name:'Glossostigma',sci:'Glossostigma elatinoides',diff:'advanced',cat:'carpet',light:'high',co2:'required',size:'nano',hard:'soft',h:4,hp:0.07,temp:'15-26°C',ph:'6.0-7.5',co2d:'Required',badge:'Lab-Verified: Classic Carpet',tags:['Fast Carpet','Light Hungry','Dense'],ins:'HC Cuba before HC Cuba was cool. OG carpeting diva.'},
+{name:'Ammannia Gracilis',sci:'Ammannia gracilis',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Orange Specialist',tags:['Orange-Red','Unique Color','Demanding'],ins:'Orange stems that look like they belong in a sunset painting'},
+{name:'Mayaca Fluviatilis',sci:'Mayaca fluviatilis',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'5.5-6.5',co2d:'Required',badge:'Lab-Verified: Delicate Beauty',tags:['Moss-Like','Acidic Water','Rare'],ins:'Looks like moss but stems. Identity crisis handled with extreme demands.'},
+{name:'Eichhornia Diversifolia',sci:'Eichhornia diversifolia',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Unique Species',tags:['Strap Leaves','Uncommon','Interesting'],ins:'Water hyacinth\'s underwater cousin. Less invasive, more demanding.'},
+{name:'Ludwigia Brevipes',sci:'Ludwigia brevipes',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'5.5-7.0',co2d:'Required',badge:'Lab-Verified: Wine Red',tags:['Deep Red','Iron Hungry','Stunning'],ins:'Wine-red leaves. Will make you want to drink wine when it melts.'},
+{name:'Rotala Bangladesh',sci:'Rotala sp. \'Bangladesh\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:15,hp:0.27,temp:'20-28°C',ph:'5.5-7.0',co2d:'Maximum',badge:'Lab-Verified: Compact Pink',tags:['Pink','Tiny','High-Tech Only'],ins:'Tiny pink leaves. Big attitude. Huge demands.'},
+{name:'Nesaea Crassicaulis',sci:'Nesaea crassicaulis',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:45,hp:0.82,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Thick Stems',tags:['Red-Orange','Large','Statement Plant'],ins:'Thick stems, thin patience for suboptimal conditions'},
+{name:'Cryptocoryne Aponogetifolia',sci:'Cryptocoryne aponogetifolia',diff:'advanced',cat:'cryptocoryne',light:'medium',co2:'optional',size:'large',hard:'soft',h:55,hp:0.95,temp:'22-28°C',ph:'6.0-7.5',co2d:'Helpful',badge:'Lab-Verified: Giant Crypt',tags:['Tall','Hammered Leaves','Impressive'],ins:'The tallest Crypt. Compensating for something? Nah, just majestic.'},
+{name:'Persicaria \'Sao Paulo\'',sci:'Persicaria sp. \'Sao Paulo\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Variegated Beauty',tags:['Pink-White','Variegated','Rare'],ins:'Pink and white variegation. Instagram model of the plant world.'},
+{name:'Blyxa Japonica',sci:'Blyxa japonica',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:15,hp:0.27,temp:'22-28°C',ph:'5.5-6.5',co2d:'Required',badge:'Lab-Verified: Rosette Expert',tags:['Grass-Like','Compact','Acidic Lover'],ins:'Grass-like rosettes that demand respect and perfect water chemistry'},
+{name:'Rotala Wallichii',sci:'Rotala wallichii',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:25,hp:0.45,temp:'22-28°C',ph:'5.5-7.0',co2d:'Maximum',badge:'Lab-Verified: Delicate Pink',tags:['Feathery','Pink','Extremely Demanding'],ins:'Feathery pink perfection. Also perfectly capable of melting overnight.'},
+{name:'Hygrophila \'Araguaia\'',sci:'Hygrophila sp. \'Araguaia\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Compact Stem',tags:['Small Leaves','Dense Growth','Red Tones'],ins:'Compact stem that acts like a diva. Small plant, big personality.'},
+{name:'Syngonanthus Belem',sci:'Syngonanthus sp. \'Belem\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:15,hp:0.27,temp:'22-28°C',ph:'5.0-6.5',co2d:'Required',badge:'Lab-Verified: Acidophile',tags:['Star Pattern','Soft Water','Challenging'],ins:'Star-shaped rosettes. Wishes upon stars that you\'ll get the pH right.'},
+{name:'Eriocaulon Setaceum',sci:'Eriocaulon setaceum',diff:'advanced',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'20-26°C',ph:'5.0-6.5',co2d:'Maximum',badge:'Lab-Verified: Needle Rosette',tags:['Needle Leaves','Compact','Expert Level'],ins:'Tiny needles in rosettes. Pokes holes in your confidence too.'},
+{name:'Ammania Senegalensis',sci:'Ammania senegalensis',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Bronze Specialist',tags:['Copper-Bronze','Unique Color','Fast Growth'],ins:'Copper-bronze beauty. Demands to be center stage or it sulks (melts).'},
+{name:'Cryptocoryne Albida',sci:'Cryptocoryne albida',diff:'advanced',cat:'cryptocoryne',light:'medium',co2:'optional',size:'small',hard:'soft',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helpful',badge:'Lab-Verified: Brown Variant',tags:['Brown Leaves','Uncommon','Sensitive'],ins:'Brown beauty that melts white-hot with rage at water changes'},
+{name:'Ludwigia Ovalis',sci:'Ludwigia ovalis',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'5.5-7.0',co2d:'Required',badge:'Lab-Verified: Red Specialist',tags:['Deep Red','Oval Leaves','Demanding'],ins:'Oval leaves turn deep red. Also turns your patience deep red (angry).'},
+{name:'Eriocaulon Cinereum',sci:'Eriocaulon cinereum',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'18-25°C',ph:'5.0-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Extreme Parameters',tags:['Ultra Rare','Soft Water Only','Flex Plant'],ins:'Looks like a sea urchin had a baby with starlight. Costs like you bought actual starlight.'},
+{name:'Tonina Fluviatilis',sci:'Syngonanthus sp.',diff:'expert',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:25,hp:0.45,temp:'18-26°C',ph:'4.5-6.5',co2d:'Absurd Levels',badge:'Lab-Verified: Acidophile Extremist',tags:['Unique Texture','Acidic Only','Competition Grade'],ins:'Melts if you: breathe wrong, dose wrong, think wrong thoughts near the tank'},
+{name:'Bucephalandra \'Wavy Green\'',sci:'Bucephalandra sp.',diff:'expert',cat:'bucephalandra',light:'medium',co2:'recommended',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Ultra-Rare Cultivar',tags:['Collector\'s Crown','Wavy Leaves','Investment Plant'],ins:'The plant equivalent of buying a rare Pokémon card. Except this one photosynthesizes.'},
+{name:'Eriocaulon Vietnam',sci:'Eriocaulon sp.',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'18-26°C',ph:'6.0-7.5',co2d:'50+ ppm',badge:'Lab-Verified: Contest Winner',tags:['Dense Rosette','Soft Water','Expert Flex'],ins:'Grows like grass. Dies like royalty. Requires treatment like a NASA experiment.'},
+{name:'Syngonanthus Macrocaulon',sci:'Syngonanthus macrocaulon',diff:'expert',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:40,hp:0.73,temp:'20-26°C',ph:'4.5-6.0',co2d:'Maximum',badge:'Lab-Verified: Acidophile Master',tags:['Needle Leaves','Extreme Care','Unicorn Status'],ins:'The \'I have a degree in plant biology\' plant. Actually, scratch that—biologists can\'t grow this either.'},
+{name:'Cryptocoryne Cordata \'Rosanervig\'',sci:'Cryptocoryne cordata var.',diff:'expert',cat:'cryptocoryne',light:'medium',co2:'optional',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helps',badge:'Lab-Verified: Ultra-Rare Morph',tags:['Pink Veins','Collector\'s Item','Sensitive'],ins:'The Crypt that melts if you even THINK about changing water brands'},
+{name:'Eriocaulon Australia',sci:'Eriocaulon sp. \'Australia\'',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'18-26°C',ph:'5.0-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Extreme Care',tags:['Rosette','Ultra Rare','Soft Water Only'],ins:'From down under. Will put your skills down under too.'},
+{name:'Bucephalandra \'Theia\'',sci:'Bucephalandra sp.',diff:'expert',cat:'bucephalandra',light:'medium',co2:'recommended',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Mythical Rarity',tags:['Iridescent','Extremely Rare','Collector\'s Dream'],ins:'Named after a goddess. Demands worship and sacrificial root tabs.'},
+{name:'Eriocaulon Quinquangulare',sci:'Eriocaulon quinquangulare',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'medium',hard:'soft',h:15,hp:0.27,temp:'20-26°C',ph:'5.0-6.5',co2d:'50+ ppm',badge:'Lab-Verified: Pentagonal Challenge',tags:['Unique Structure','Soft Water','Expert Only'],ins:'Five-sided stems. One-sided demands: perfect or death.'},
+{name:'Syngonanthus Rio Negro',sci:'Syngonanthus sp. \'Rio Negro\'',diff:'expert',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:40,hp:0.73,temp:'22-28°C',ph:'4.5-6.0',co2d:'Maximum',badge:'Lab-Verified: Black Water Specialist',tags:['Acidic Only','Rare','Challenging'],ins:'From black water rivers. Needs black belt aquascaping skills.'},
+{name:'Bucephalandra \'Godzilla\'',sci:'Bucephalandra sp.',diff:'expert',cat:'bucephalandra',light:'medium',co2:'recommended',size:'small',hard:'soft',h:12,hp:0.22,temp:'20-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Monster Rarity',tags:['Large for Buce','Rare','Expensive'],ins:'Named after a monster. Will monster your wallet and patience.'},
+{name:'Eriocaulon Parkeri',sci:'Eriocaulon parkeri',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:8,hp:0.14,temp:'18-26°C',ph:'5.0-6.5',co2d:'Maximum',badge:'Lab-Verified: Compact Expert',tags:['Tiny Rosettes','Bright Green','Demanding'],ins:'Tiny green pom-poms. Demands you park your ego at the door.'},
+{name:'Rotala Mexicana \'Goias\'',sci:'Rotala sp. \'Goias\'',diff:'expert',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'20-28°C',ph:'5.5-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Pink Perfection',tags:['Bright Pink','Ultra Rare','Extremely Demanding'],ins:'Pink, delicate, and goes away faster than your aquascaping confidence'},
+{name:'Cryptocoryne Keei',sci:'Cryptocoryne keei',diff:'expert',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'soft',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helpful',badge:'Lab-Verified: Rare Endemic',tags:['Ultra Rare','Variable Leaves','Collector\'s Prize'],ins:'The key to growing this? There is no key. Just luck and prayers.'},
+{name:'Syngonanthus Inundatus',sci:'Syngonanthus inundatus',diff:'expert',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'20-26°C',ph:'4.5-6.0',co2d:'Maximum',badge:'Lab-Verified: Acidophile Master',tags:['Star Rosettes','Acidic Water','Expert Challenge'],ins:'Will inundate you with challenges and regret'},
+{name:'Bucephalandra \'Skeleton King\'',sci:'Bucephalandra sp.',diff:'expert',cat:'bucephalandra',light:'medium',co2:'recommended',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Premium Cultivar',tags:['Dark Purple','Extremely Rare','Investment Grade'],ins:'Will reduce your bank account to a skeleton. Worth it.'},
+{name:'Eriocaulon Polaris',sci:'Eriocaulon sp. \'Polaris\'',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'18-25°C',ph:'5.0-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Competition Grade',tags:['Needle-Like','Rare','Extreme Demands'],ins:'Points north like a compass. Also points to your impending failure.'},
+{name:'Cryptocoryne Purpurea',sci:'Cryptocoryne purpurea',diff:'expert',cat:'cryptocoryne',light:'medium',co2:'optional',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helpful',badge:'Lab-Verified: Purple Variant',tags:['Purple Undersides','Rare','Melt Prone'],ins:'Purple beauty that turns your mood purple (bruised) when it melts'},
+{name:'Ludwigia Inclinata \'White\'',sci:'Ludwigia inclinata \'White\'',diff:'expert',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'5.5-7.0',co2d:'60+ ppm',badge:'Lab-Verified: Albino Coloration',tags:['White-Yellow','Ultra Rare','Extremely Demanding'],ins:'Turns white under perfect conditions. Your face turns white when it melts.'},
+{name:'Bucephalandra \'Red\'',sci:'Bucephalandra sp.',diff:'expert',cat:'bucephalandra',light:'medium',co2:'recommended',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Red Cultivar',tags:['Red Leaves','Rare','Expensive'],ins:'Seeing red? That\'s the price tag. And your frustration growing it.'},
+{name:'Eriocaulon \'Feather Duster\'',sci:'Eriocaulon sp.',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'18-26°C',ph:'5.0-6.5',co2d:'50+ ppm',badge:'Lab-Verified: Feathery Expert',tags:['Feathery Leaves','Rare','Soft Water'],ins:'Looks like a feather duster. Will dust your ego clean off.'},
+{name:'Rotala \'Pearl\'',sci:'Rotala sp. \'Pearl\'',diff:'expert',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:12,hp:0.22,temp:'20-28°C',ph:'5.5-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Miniature Beauty',tags:['Tiny Leaves','Compact','Ultra Demanding'],ins:'Precious as pearls. Dies faster than oysters out of water.'},
+{name:'Syngonanthus Uaupes',sci:'Syngonanthus sp. \'Uaupes\'',diff:'expert',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'4.5-6.0',co2d:'Maximum',badge:'Lab-Verified: River Endemic',tags:['Star Pattern','Acidic Specialist','Rare'],ins:'From the Uaupes river. Will make you say \'whoops\' a lot.'},
+{name:'Cryptocoryne Zonata',sci:'Cryptocoryne zonata',diff:'expert',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'soft',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helpful',badge:'Lab-Verified: Striped Rarity',tags:['Striped Leaves','Ultra Rare','Melt Master'],ins:'Zoned out from trying to keep this alive yet?'},
+{name:'Bucephalandra \'Kedagang Mini\'',sci:'Bucephalandra sp.',diff:'expert',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helps',badge:'Lab-Verified: Miniature Premium',tags:['Tiny','Iridescent','Collector\'s Choice'],ins:'Regular Kedagang\'s tiny sibling. Costs more, grows slower. Makes sense.'},
+{name:'Eriocaulon \'Goias\'',sci:'Eriocaulon sp. \'Goias\'',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'18-26°C',ph:'5.0-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Brazilian Challenge',tags:['Compact Rosette','Rare','Expert Grade'],ins:'From Brazil. Will send you to Brazil (aquascaping hell) if conditions aren\'t perfect.'},
+{name:'Pogostemon Kimberleyensis',sci:'Pogostemon kimberleyensis',diff:'expert',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Rare Endemic',tags:['Unique Leaves','Rare','Demanding'],ins:'From Australia\'s Kimberley. As remote and hard to reach as the region itself.'},
+{name:'Cryptocoryne Ferruginea',sci:'Cryptocoryne ferruginea',diff:'expert',cat:'cryptocoryne',light:'medium',co2:'optional',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helpful',badge:'Lab-Verified: Collector\'s Crypt',tags:['Rusty Brown','Large','Rare'],ins:'Rusty colored. Your aquascaping skills will rust too.'},
+{name:'Bucephalandra \'Sintang\'',sci:'Bucephalandra sp.',diff:'expert',cat:'bucephalandra',light:'medium',co2:'recommended',size:'small',hard:'soft',h:12,hp:0.22,temp:'20-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Regional Variant',tags:['Dark Leaves','Rare','Slow Growth'],ins:'From Sintang region. Will make your wallet sing a sad song.'},
+{name:'Limnophila Hippuridoides',sci:'Limnophila hippuridoides',diff:'expert',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:45,hp:0.82,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Whorl Master',tags:['Dense Whorls','Feathery','Demanding'],ins:'Dense whorls of leaves. Dense requirements for success.'},
+{name:'Eriocaulon \'Japan\'',sci:'Eriocaulon sp. \'Japan\'',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:8,hp:0.14,temp:'18-26°C',ph:'5.0-6.5',co2d:'60+ ppm',badge:'Lab-Verified: JDM Exclusive',tags:['Compact','Rare','Extreme Care'],ins:'Japanese precision meets aquatic difficulty. Hai, very challenging.'},
+{name:'Anubias Minima',sci:'Anubias minima',diff:'beginner',cat:'anubias',light:'low',co2:'optional',size:'medium',hard:'all',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.5',co2d:'Nope',badge:'Lab-Verified: Slim Anubias',tags:['Narrow Leaves','Epiphyte','Low Light'],ins:'Slim, elegant, and absolutely unbothered by your poor lighting choices.'},
+{name:'Anubias Frazeri',sci:'Anubias frazeri',diff:'beginner',cat:'anubias',light:'low',co2:'optional',size:'medium',hard:'all',h:22,hp:0.4,temp:'22-28°C',ph:'6.0-7.5',co2d:'No',badge:'Lab-Verified: Hybrid Anubias',tags:['Hybrid','Hardy','Epiphyte'],ins:'Hybrid toughness. Like two indestructible plants had a baby.'},
+{name:'Microsorum Pteropus Windelov',sci:'Microsorum pteropus \'Windelöv\'',diff:'beginner',cat:'fern',light:'low',co2:'optional',size:'medium',hard:'all',h:25,hp:0.45,temp:'20-28°C',ph:'6.0-7.5',co2d:'No',badge:'Lab-Verified: Lace Fern',tags:['Lacy Tips','Epiphyte','Unique'],ins:'Like Java Fern went to finishing school and came back with style.'},
+{name:'Bolbitis Difformis',sci:'Bolbitis difformis',diff:'beginner',cat:'fern',light:'low',co2:'optional',size:'nano',hard:'soft',h:8,hp:0.15,temp:'20-26°C',ph:'6.0-7.0',co2d:'Optional',badge:'Lab-Verified: Mini Bolbitis',tags:['Tiny','Epiphyte','Hardy'],ins:'Bolbitis went into nano mode. Same toughness, smaller footprint.'},
+{name:'Egeria Najas',sci:'Egeria najas',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:55,hp:0.96,temp:'18-28°C',ph:'6.5-7.5',co2d:'No',badge:'Lab-Verified: Narrow Elodea',tags:['Fast Growth','Oxygenator','Easy'],ins:'Thinner leaves than Egeria densa. Still grows like it owes you nothing.'},
+{name:'Vallisneria Asiatica',sci:'Vallisneria asiatica',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'hard',h:60,hp:1.0,temp:'20-28°C',ph:'6.5-8.0',co2d:'Not Needed',badge:'Lab-Verified: Twisted Val',tags:['Twisted Leaves','Background','Hardy'],ins:'Twists like a ballet dancer. Thrives in tap water where others cry.'},
+{name:'Vallisneria Americana',sci:'Vallisneria americana',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'hard',h:60,hp:1.0,temp:'18-28°C',ph:'6.5-8.0',co2d:'No',badge:'Lab-Verified: Giant Val',tags:['Very Tall','Background','Hard Water'],ins:'Can grow to 1m+ and still not complain about anything.'},
+{name:'Sagittaria Platyphylla',sci:'Sagittaria platyphylla',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'medium',hard:'all',h:20,hp:0.36,temp:'18-28°C',ph:'6.0-8.0',co2d:'Optional',badge:'Lab-Verified: Broad Sag',tags:['Broad Leaves','Runners','Easy'],ins:'Wider leaves than Dwarf Sag. Less of a lawn, more of a meadow.'},
+{name:'Cryptocoryne Crispatula',sci:'Cryptocoryne crispatula',diff:'beginner',cat:'cryptocoryne',light:'medium',co2:'optional',size:'large',hard:'all',h:45,hp:0.82,temp:'22-28°C',ph:'6.0-8.0',co2d:'Optional',badge:'Lab-Verified: Crinkle Crypt',tags:['Long Leaves','Crinkled','Hardy'],ins:'Long, crinkled leaves swaying like it\'s got all the time in the world.'},
+{name:'Cryptocoryne X Willisii \'Lucens\'',sci:'Cryptocoryne × willisii \'Lucens\'',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'all',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Bright Hybrid',tags:['Bright Green','Compact','Easy'],ins:'Lucens variant of the hardy Willis cross. Brighter, shinier, still unfazed.'},
+{name:'Nymphaea Lotus (Red)',sci:'Nymphaea lotus',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:50,hp:0.91,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Tiger Lotus',tags:['Red Leaves','Floating Lily','Centerpiece'],ins:'Produces lily pads at the surface if you let it. Stop cutting the floating leaves though.'},
+{name:'Nymphaea Zenkeri',sci:'Nymphaea zenkeri',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:50,hp:0.91,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Dwarf Lily',tags:['Spotted Leaves','Bulb Plant','Bold'],ins:'Spotted, dramatic leaves. Bulb plant that practically grows itself.'},
+{name:'Echinodorus Bleheri',sci:'Echinodorus bleheri',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:50,hp:0.91,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Broad Sword',tags:['Broad Leaves','Background','Root Feeder'],ins:'Amazon Sword\'s broader cousin. Same unkillability, different leaf shape.'},
+{name:'Echinodorus Tenellus',sci:'Echinodorus tenellus',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'nano',hard:'all',h:7,hp:0.13,temp:'20-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Pygmy Chain',tags:['Tiny Sword','Runners','Carpet'],ins:'Sword plant decided to miniaturize. Runs like a little green army across your substrate.'},
+{name:'Echinodorus Latifolius',sci:'Echinodorus latifolius',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'small',hard:'all',h:10,hp:0.18,temp:'20-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Broad Pygmy',tags:['Wide Leaves','Carpet','Easy'],ins:'Pygmy chain\'s broader sibling. Carpets with a bit more bulk.'},
+{name:'Vesicularia Dubyana',sci:'Vesicularia dubyana',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:4,hp:0.07,temp:'20-28°C',ph:'5.5-7.5',co2d:'No',badge:'Lab-Verified: Singapore Moss',tags:['Hardy','Shrimp Safe','Durable'],ins:'The original aquarium moss. Old faithful. Never lets you down.'},
+{name:'Taxiphyllum Spirale',sci:'Taxiphyllum sp. \'Spiral\'',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:4,hp:0.07,temp:'18-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Spiral Moss',tags:['Spiraling','Unique','Hardy'],ins:'Curls in spirals. Aquatic hairstyle goals, zero maintenance required.'},
+{name:'Ceratophyllum Submersum Soft',sci:'Ceratophyllum submersum',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:55,hp:0.96,temp:'15-30°C',ph:'6.0-8.0',co2d:'No',badge:'Lab-Verified: Soft Hornwort',tags:['Soft','Floating','Fast'],ins:'Softer than regular hornwort. Still drops needles. The vacuuming never ends.'},
+{name:'Eleocharis Vivipara',sci:'Eleocharis vivipara',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'large',hard:'all',h:40,hp:0.73,temp:'18-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Umbrella Grass',tags:['Tall Grass','Unusual','Background'],ins:'Hairgrass on a mission to grow tall. Droops at the top like tiny umbrellas. Extraordinary.'},
+{name:'Hygrophila Stricta',sci:'Hygrophila stricta',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:40,hp:0.73,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Strict Growth',tags:['Upright','Large Leaves','Easy'],ins:'Grows stiffly upright like it\'s standing at attention for inspection.'},
+{name:'Hygrophila Angustifolia',sci:'Hygrophila angustifolia',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:40,hp:0.73,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Narrow Leaf',tags:['Narrow Leaves','Fast','Background'],ins:'Narrower leaves than regular Hygro. Still grows like it\'s been given steroids.'},
+{name:'Bacopa Amplexicaulis',sci:'Bacopa amplexicaulis',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:30,hp:0.55,temp:'20-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Clasping Bacopa',tags:['Clasping Leaves','Easy','Reliable'],ins:'Leaves clasp the stem like it\'s giving itself a hug. Wholesome and hardy.'},
+{name:'Limnophila Aquatica',sci:'Limnophila aquatica',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:45,hp:0.82,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Giant Ambulia',tags:['Feathery','Large','Background'],ins:'Giant ambulia. Feathery enough to make your tank look like a tropical jungle.'},
+{name:'Rotala Rotundifolia Orange Juice',sci:'Rotala rotundifolia \'Orange Juice\'',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:28,hp:0.51,temp:'20-28°C',ph:'5.5-7.0',co2d:'Recommended',badge:'Lab-Verified: Orange Variant',tags:['Orange','Vibrant','Eye-Catching'],ins:'Orange Juice variant. No pulp, no seeds, just demanding care requirements.'},
+{name:'Rotala Sunset',sci:'Rotala sp. \'Sunset\'',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:28,hp:0.51,temp:'20-28°C',ph:'5.5-7.0',co2d:'Recommended',badge:'Lab-Verified: Gradient Beauty',tags:['Orange-Pink','Sunset Tones','Vibrant'],ins:'Gradient coloration like a sunset. Your tank will look like art.'},
+{name:'Ludwigia Glandulosa',sci:'Ludwigia glandulosa',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:30,hp:0.55,temp:'22-28°C',ph:'6.0-7.0',co2d:'Yes Please',badge:'Lab-Verified: Deep Red Stem',tags:['Deep Red','Glandular','Demanding'],ins:'Deep red and proud of it. Won\'t go red without CO2 though, fair warning.'},
+{name:'Ludwigia Arcuata',sci:'Ludwigia arcuata',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'small',hard:'soft',h:15,hp:0.27,temp:'20-26°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Needle Stem',tags:['Needle Leaves','Orange-Red','Compact'],ins:'Needle-thin leaves in reddish orange. Delicate looking, moderately demanding.'},
+{name:'Hygrophila Siamensis',sci:'Hygrophila siamensis',diff:'intermediate',cat:'stem',light:'medium',co2:'recommended',size:'large',hard:'all',h:40,hp:0.73,temp:'22-28°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Thai Hygro',tags:['Compact','Dense','Reliable'],ins:'Thai Hygro. Compact and reliable, like a really dependable friend from Bangkok.'},
+{name:'Limnophila Indica',sci:'Limnophila indica',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'large',hard:'soft',h:45,hp:0.82,temp:'22-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Indian Ambulia',tags:['Feathery','Demanding','Background'],ins:'Feathery underwater, unrecognizable above water. Identity crisis optional.'},
+{name:'Eleocharis Montevidensis',sci:'Eleocharis montevidensis',diff:'intermediate',cat:'carpet',light:'high',co2:'recommended',size:'medium',hard:'all',h:20,hp:0.36,temp:'15-25°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Giant Hairgrass',tags:['Tall Hairgrass','Cool Water','Dense'],ins:'Hairgrass that grew up and refused to stay small. Background grass vibes.'},
+{name:'Bucephalandra \'Biblis\'',sci:'Bucephalandra sp. \'Biblis\'',diff:'intermediate',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helps',badge:'Lab-Verified: Elongated Buce',tags:['Elongated Leaves','Iridescent','Compact'],ins:'Elongated iridescent leaves. A Buce that dares to be different.'},
+{name:'Bucephalandra \'Mini Coin\'',sci:'Bucephalandra sp. \'Mini Coin\'',diff:'intermediate',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:4,hp:0.07,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helps',badge:'Lab-Verified: Coin Buce',tags:['Round Leaves','Tiny','Collector'],ins:'Coin-shaped leaves on a tiny plant. Worth more than actual coins.'},
+{name:'Bucephalandra \'Dark Skeleton\'',sci:'Bucephalandra sp. \'Dark Skeleton\'',diff:'intermediate',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helpful',badge:'Lab-Verified: Dark Cultivar',tags:['Very Dark','Iridescent','Rare'],ins:'Nearly black leaves with iridescent sheen. Goth phase but make it aquatic.'},
+{name:'Microsorum Pteropus Narrow Leaf',sci:'Microsorum pteropus \'Narrow Leaf\'',diff:'beginner',cat:'fern',light:'low',co2:'optional',size:'medium',hard:'all',h:22,hp:0.4,temp:'20-28°C',ph:'6.0-7.5',co2d:'No',badge:'Lab-Verified: Slim Fern',tags:['Slim Leaves','Hardy','Epiphyte'],ins:'Java Fern got a trim. Still bulletproof, now with more elegance.'},
+{name:'Anubias Nana \'Gold\'',sci:'Anubias barteri var. nana \'Gold\'',diff:'beginner',cat:'anubias',light:'medium',co2:'optional',size:'small',hard:'all',h:10,hp:0.18,temp:'22-28°C',ph:'6.0-7.5',co2d:'No',badge:'Lab-Verified: Golden Variant',tags:['Yellow-Green','Rare','Ornamental'],ins:'Gold variant Anubias. Because your tank deserves precious metals.'},
+{name:'Lobelia Cardinalis Mini',sci:'Lobelia cardinalis \'Mini\'',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'small',hard:'soft',h:12,hp:0.22,temp:'18-24°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Compact Cardinal',tags:['Compact','Purple Stems','Cool Water'],ins:'Dwarf Cardinal Plant. Fits in nano tanks, demands the same attention as the big version.'},
+{name:'Persicaria Kawagoeanum',sci:'Persicaria kawagoeanum',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Mini Persicaria',tags:['Pink Tones','Small Leaves','Dense'],ins:'Delicate pink stems that look like they belong in a jeweler\'s window.'},
+{name:'Alternanthera Reineckii',sci:'Alternanthera reineckii',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:30,hp:0.55,temp:'22-28°C',ph:'5.5-7.0',co2d:'Required',badge:'Lab-Verified: Classic AR',tags:['Red-Purple','Iron Hungry','Statement'],ins:'The original AR. Big, bold, red, and demanding. Like the CEO of your tank.'},
+{name:'Hydrotriche Hottoniiflora',sci:'Hydrotriche hottoniiflora',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'large',hard:'soft',h:45,hp:0.82,temp:'20-26°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Water Featherfoil',tags:['Feathery','Rare','Cool Water'],ins:'Feathery underwater whorls. Rare gem for the discerning collector.'},
+{name:'Didiplis Diandra',sci:'Didiplis diandra',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:25,hp:0.45,temp:'20-26°C',ph:'5.5-7.0',co2d:'Recommended',badge:'Lab-Verified: Water Hedge',tags:['Lime Green','Dense','Unique'],ins:'Tiny lime-green leaves packed densely. Like a hedge, but underwater and prettier.'},
+{name:'Taxiphyllum Barbieri \'Mini\'',sci:'Taxiphyllum barbieri \'Mini\'',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:3,hp:0.05,temp:'18-28°C',ph:'5.5-7.5',co2d:'No',badge:'Lab-Verified: Mini Java',tags:['Tiny','Hardy','Dense'],ins:'Java Moss but somehow smaller and even harder to kill. Achievement unlocked.'},
+{name:'Spiky Moss',sci:'Taxiphyllum sp. \'Spiky\'',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:4,hp:0.07,temp:'18-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Spiky Growth',tags:['Spiky Tips','Dense','Hardy'],ins:'Moss with attitude. Spiky tips that look vaguely threatening but cause zero harm.'},
+{name:'Fissidens Fontanus',sci:'Fissidens fontanus',diff:'intermediate',cat:'moss',light:'medium',co2:'optional',size:'nano',hard:'soft',h:4,hp:0.07,temp:'15-24°C',ph:'6.0-7.5',co2d:'Helpful',badge:'Lab-Verified: US Fissidens',tags:['Frond-Like','Cool Water','Unique'],ins:'American Fissidens cousin. Cooler temps required, bigger fronds reward.'},
+{name:'Hydrocotyle Verticillata',sci:'Hydrocotyle verticillata',diff:'intermediate',cat:'carpet',light:'medium',co2:'recommended',size:'nano',hard:'all',h:6,hp:0.11,temp:'20-28°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Shield Pennywort',tags:['Circular Leaves','Carpet','Unique'],ins:'Perfect circles on thin stems. Geometrically satisfying to look at.'},
+{name:'Hydrocotyle Japan',sci:'Hydrocotyle sibthorpioides',diff:'intermediate',cat:'carpet',light:'medium',co2:'recommended',size:'nano',hard:'all',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Mini Pennywort',tags:['Tiny Round Leaves','Carpet','Dense'],ins:'Tiny round leaves that form a dense carpet. Japan makes everything better.'},
+{name:'Cryptocoryne Walkeri',sci:'Cryptocoryne walkeri',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'all',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Walker\'s Crypt',tags:['Green','Easy','Compact'],ins:'Walks so easily into your tank setup. Named perfectly.'},
+{name:'Cryptocoryne Usteriana',sci:'Cryptocoryne usteriana',diff:'intermediate',cat:'cryptocoryne',light:'medium',co2:'optional',size:'large',hard:'all',h:50,hp:0.91,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Giant Crypt',tags:['Very Tall','Background','Rare'],ins:'One of the tallest Crypts. Will need its own postal code in your tank.'},
+{name:'Cryptocoryne Pygmaea',sci:'Cryptocoryne pygmaea',diff:'intermediate',cat:'cryptocoryne',light:'medium',co2:'optional',size:'nano',hard:'soft',h:6,hp:0.11,temp:'22-28°C',ph:'6.0-7.0',co2d:'Optional',badge:'Lab-Verified: Pygmy Crypt',tags:['Tiny','Rare','Foreground'],ins:'Pygmy in name and stature. Enormous in difficulty and price.'},
+{name:'Cryptocoryne Lingua',sci:'Cryptocoryne lingua',diff:'intermediate',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'soft',h:10,hp:0.18,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Tongue Crypt',tags:['Spoon Leaves','Unusual','Semi-Aquatic'],ins:'Tongue-shaped leaves. Speaking the language of difficult aquascapers only.'},
+{name:'Lagenandra Meeboldii',sci:'Lagenandra meeboldii',diff:'intermediate',cat:'cryptocoryne',light:'low',co2:'optional',size:'medium',hard:'soft',h:25,hp:0.45,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Pink Lagenandra',tags:['Pink Tones','Rare','Crypt Relative'],ins:'Crypt\'s beautiful cousin. Pinkish tones and slow growth. Worth the wait.'},
+{name:'Pogostemon Stellatus',sci:'Pogostemon stellatus',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:45,hp:0.82,temp:'22-28°C',ph:'5.5-7.0',co2d:'Required',badge:'Lab-Verified: Star Whorls',tags:['Star Whorls','Pink','Competition Grade'],ins:'Star-shaped whorls in pink-purple. Looks extraterrestrial, demands alien water chemistry.'},
+{name:'Rotala Nanjenshan',sci:'Rotala nanjenshan',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:25,hp:0.45,temp:'20-26°C',ph:'5.5-7.0',co2d:'Required',badge:'Lab-Verified: Taiwan Rotala',tags:['Pink-Orange','Rare','Demanding'],ins:'From Taiwan. Turns gorgeous shades of salmon under perfect conditions.'},
+{name:'Rotala Colorata',sci:'Rotala sp. \'Colorata\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:25,hp:0.45,temp:'20-28°C',ph:'5.5-7.0',co2d:'Maximum',badge:'Lab-Verified: Multi-Color',tags:['Orange-Red','Intense Color','Demanding'],ins:'Multiple colors at once. Like a sunset got confused and became a plant.'},
+{name:'Tonina Belem',sci:'Syngonanthus sp. \'Belem\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:15,hp:0.27,temp:'22-28°C',ph:'5.0-6.5',co2d:'Required',badge:'Lab-Verified: Belem Variant',tags:['Acidic','Rare','Compact'],ins:'Compact Tonina variant. Smaller demands compared to Fluviatilis. Still daunting.'},
+{name:'Hemianthus Micranthemoides',sci:'Hemianthus micranthemoides',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:12,hp:0.22,temp:'20-26°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Pearl Weed',tags:['Tiny Leaves','Dense','Competition'],ins:'Pearl weed. Creates pearlescent bubble clouds. Basically living jewelry.'},
+{name:'Elatine Hydropiper',sci:'Elatine hydropiper',diff:'advanced',cat:'carpet',light:'high',co2:'required',size:'nano',hard:'soft',h:3,hp:0.05,temp:'18-24°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Micro Carpet',tags:['Nano Carpet','Cool Water','Rare'],ins:'Carpet so tiny you need glasses to appreciate it. Requires near-perfect conditions.'},
+{name:'Eriocaulon Australe',sci:'Eriocaulon australe',diff:'advanced',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'18-26°C',ph:'5.0-6.5',co2d:'Required',badge:'Lab-Verified: Southern Eriocaulon',tags:['Compact Rosette','Soft Water','Demanding'],ins:'Southern hemisphere Eriocaulon. No easier just because it sounds friendlier.'},
+{name:'Hottonia Palustris',sci:'Hottonia palustris',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:40,hp:0.73,temp:'10-20°C',ph:'6.5-7.5',co2d:'Required',badge:'Lab-Verified: Water Violet',tags:['Feathery','Cool Water','Rare'],ins:'Needs cold water. If your tank runs hot, this one is not your friend.'},
+{name:'Utricularia Aurea',sci:'Utricularia aurea',diff:'advanced',cat:'stem',light:'high',co2:'optional',size:'large',hard:'soft',h:40,hp:0.73,temp:'22-28°C',ph:'5.5-7.0',co2d:'Optional',badge:'Lab-Verified: Golden Bladderwort',tags:['Carnivorous','Golden','Unusual'],ins:'Golden bladderwort. Catches micro-prey. Nature\'s most elegant pest control.'},
+{name:'Shinnersia Rivularis',sci:'Shinnersia rivularis',diff:'intermediate',cat:'stem',light:'medium',co2:'recommended',size:'large',hard:'all',h:40,hp:0.73,temp:'18-26°C',ph:'6.5-7.5',co2d:'Recommended',badge:'Lab-Verified: Mexican Oak',tags:['Oak-Like Leaves','Fast','Background'],ins:'Leaves shaped like oak leaves. Mexican Oak Leaf plant. Genuinely unusual.'},
+{name:'Cabomba Furcata',sci:'Cabomba furcata',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:50,hp:0.91,temp:'22-28°C',ph:'5.5-7.0',co2d:'Required',badge:'Lab-Verified: Red Cabomba',tags:['Red','Feathery','Demanding'],ins:'Red Cabomba. Feathery and fiery. Melts fast if not cared for perfectly.'},
+{name:'Mayaca Sellowiana',sci:'Mayaca sellowiana',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:25,hp:0.45,temp:'20-26°C',ph:'5.5-6.5',co2d:'Recommended',badge:'Lab-Verified: Soft Stem',tags:['Soft Texture','Acidic','Unusual'],ins:'Softer texture than Mayaca fluviatilis. Slightly less demanding, equally beautiful.'},
+{name:'Heteranthera Zosterifolia',sci:'Heteranthera zosterifolia',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:30,hp:0.55,temp:'22-28°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Stargrass',tags:['Star-Like Leaves','Fast','Dense'],ins:'Star-shaped leaf arrangement. Grows densely and fairly fast. Star of the show.'},
+{name:'Nuphar Japonica',sci:'Nuphar japonica',diff:'intermediate',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:50,hp:0.91,temp:'18-26°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Japanese Spatterdock',tags:['Arrow Leaves','Bulb Plant','Unique'],ins:'Arrow-shaped leaves on thick stems. Ancient and magnificent. Grows from a bulb.'},
+{name:'Crinum Calamistratum',sci:'Crinum calamistratum',diff:'intermediate',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:60,hp:1.0,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Wavy Crinum',tags:['Wavy Edges','Large Bulb','Impressive'],ins:'Long, wavy leaves from a bulb. Needs space. Pays rent in aesthetics.'},
+{name:'Aponogeton Ulvaceus',sci:'Aponogeton ulvaceus',diff:'intermediate',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:55,hp:0.96,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Broad Aponogeton',tags:['Wavy Leaves','Bulb Plant','Impressive'],ins:'Broad, ruffled leaves from a bulb. Grows explosively then rests. Dramatic cycles.'},
+{name:'Aponogeton Boivinianus',sci:'Aponogeton boivinianus',diff:'intermediate',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:55,hp:0.96,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Hammered Aponogeton',tags:['Hammered Leaves','Bulb','Large'],ins:'Hammered, bullate leaves. One of the most beautiful Aponogetons in the hobby.'},
+{name:'Aponogeton Madagascariensis',sci:'Aponogeton madagascariensis',diff:'expert',cat:'stem',light:'medium',co2:'recommended',size:'large',hard:'soft',h:55,hp:0.96,temp:'18-22°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Lace Plant',tags:['Skeletal Leaves','Madagascar Only','Ultimate Challenge'],ins:'Leaves are literally a skeleton. Zero leaf tissue. All vein. Nature\'s masterpiece and your biggest headache.'},
+{name:'Barclaya Longifolia',sci:'Barclaya longifolia',diff:'advanced',cat:'stem',light:'medium',co2:'recommended',size:'large',hard:'soft',h:45,hp:0.82,temp:'22-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Orchid Lily',tags:['Red Undersides','Bulb Plant','Rare'],ins:'Red undersides and dark green tops. Like a plant that\'s secretly wearing red underwear.'},
+{name:'Ammannia Bonsai',sci:'Ammannia sp. \'Bonsai\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Compact Red',tags:['Orange-Red','Compact','High Tech'],ins:'Bonsai-sized Ammannia. All the color, double the drama in a smaller package.'},
+{name:'Nesaea Pedicellata',sci:'Nesaea pedicellata',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Yellow Nesaea',tags:['Yellow-Green','Nutrient Heavy','Bright'],ins:'Yellow-green stems that light up the background. Eats nutrients for breakfast.'},
+{name:'Rotala Macrandra Mini',sci:'Rotala macrandra \'Mini\'',diff:'expert',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:12,hp:0.22,temp:'22-28°C',ph:'5.5-7.0',co2d:'Maximum',badge:'Lab-Verified: Mini Macrandra',tags:['Deep Red','Miniature','Expert Only'],ins:'Macrandra went nano. Smaller leaves, same insane demands. Why would anyone do this? Beauty.'},
+{name:'Rotala Macrandra Green',sci:'Rotala macrandra \'Green\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'5.5-7.0',co2d:'MAX IT',badge:'Lab-Verified: Green Macrandra',tags:['Bright Green','Demanding','Rare'],ins:'Green Macrandra. Same demanding requirements, different dress code.'},
+{name:'Syngonanthus Chiapensis',sci:'Syngonanthus chiapensis',diff:'expert',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:25,hp:0.45,temp:'20-26°C',ph:'4.5-6.0',co2d:'Maximum',badge:'Lab-Verified: Mexican Pipewort',tags:['Acidic Specialist','Rare','Fluffy'],ins:'Mexican Syngonanthus. Just as demanding as its Brazilian cousins.'},
+{name:'Eriocaulon Sp. Sulawesi',sci:'Eriocaulon sp. \'Sulawesi\'',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'22-28°C',ph:'5.0-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Island Endemic',tags:['Rare','Soft Water','Island Species'],ins:'From Sulawesi. Rare and site-specific. Gets homesick if water isn\'t just right.'},
+{name:'Bucephalandra \'Catherine\'',sci:'Bucephalandra sp. \'Catherine\'',diff:'expert',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Rare Named Cultivar',tags:['Named Cultivar','Iridescent','Premium'],ins:'Named cultivars command named prices. Catherine does not come cheap.'},
+{name:'Bucephalandra \'Deep Purple\'',sci:'Bucephalandra sp. \'Deep Purple\'',diff:'expert',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.0',co2d:'Recommended',badge:'Lab-Verified: Ultra Dark',tags:['Very Dark Purple','Rare','Collector'],ins:'Almost black purple. So dark light appears to be absorbed by it.'},
+{name:'Bucephalandra \'Lamandau\'',sci:'Bucephalandra sp. \'Lamandau\'',diff:'intermediate',cat:'bucephalandra',light:'low',co2:'optional',size:'nano',hard:'soft',h:5,hp:0.09,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helps',badge:'Lab-Verified: Regional Buce',tags:['Wide Leaves','Hardy Buce','Collector'],ins:'From the Lamandau river region. Slightly more forgiving than exotic variants.'},
+{name:'Cryptocoryne Bullosa',sci:'Cryptocoryne bullosa',diff:'expert',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'soft',h:10,hp:0.18,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helpful',badge:'Lab-Verified: Bullate Crypt',tags:['Bumpy Texture','Ultra Rare','Borneo Only'],ins:'Bullate (bumpy) leaves from Borneo. Rare as a perfect tank day.'},
+{name:'Cryptocoryne Scurrilis',sci:'Cryptocoryne scurrilis',diff:'expert',cat:'cryptocoryne',light:'low',co2:'optional',size:'medium',hard:'soft',h:20,hp:0.36,temp:'22-28°C',ph:'6.0-7.0',co2d:'Optional',badge:'Lab-Verified: Extreme Rarity',tags:['Ultra Rare','Collector','Sensitive'],ins:'So rare, just knowing its name is a flex. Growing it successfully is a miracle.'},
+{name:'Cryptocoryne Moehlmannii',sci:'Cryptocoryne moehlmannii',diff:'advanced',cat:'cryptocoryne',light:'medium',co2:'optional',size:'medium',hard:'soft',h:20,hp:0.36,temp:'22-28°C',ph:'6.0-7.0',co2d:'Helpful',badge:'Lab-Verified: Moehlmann\'s Crypt',tags:['Brown-Green','Uncommon','Reliable'],ins:'Less melodramatic than most Crypts. A relative gem in an anxious genus.'},
+{name:'Limnophila Rugosa',sci:'Limnophila rugosa',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'all',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Wrinkled Ambulia',tags:['Wrinkled Leaves','Fragrant','Unusual'],ins:'Wrinkled leaves that smell amazing when crushed. Don\'t crush your plants though.'},
+{name:'Eichhornia Azurea',sci:'Eichhornia azurea',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'large',hard:'soft',h:50,hp:0.91,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Blue Pickerelweed',tags:['Strap Leaves','Uncommon','Dramatic'],ins:'Water hyacinth\'s fully submerged cousin. Dramatic and demanding in equal measure.'},
+{name:'Eriocaulon Heleocharioides',sci:'Eriocaulon heleocharioides',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'18-26°C',ph:'5.0-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Hairgrass Mimic',tags:['Grass-Like','Rare','Expert Only'],ins:'Looks like hairgrass but is infinitely harder. Nature trolling aquascapers again.'},
+{name:'Rotala Mexicana',sci:'Rotala mexicana',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:15,hp:0.27,temp:'20-28°C',ph:'5.5-7.0',co2d:'Required',badge:'Lab-Verified: Miniature Rotala',tags:['Tiny Leaves','Pink Tones','Demanding'],ins:'Miniature Rotala with pink tones. Small plant, big chip on its shoulder.'},
+{name:'Proserpinaca Palustris Cuba',sci:'Proserpinaca palustris \'Cuba\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Cuban Mermaid Weed',tags:['Serrated','Red-Orange','Demanding'],ins:'Cuban variant of Mermaid Weed. More vibrant color, same demanding nature.'},
+{name:'Lysimachia Nummularia Aurea',sci:'Lysimachia nummularia \'Aurea\'',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:25,hp:0.45,temp:'18-24°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Golden Creeping Jenny',tags:['Golden Yellow','Cool Water','Easy'],ins:'Glowing gold coins on stems. Cool water specialist that adds warmth visually.'},
+{name:'Cardamine Lyrata',sci:'Cardamine lyrata',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'medium',hard:'all',h:30,hp:0.55,temp:'15-22°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Japanese Cress',tags:['Delicate','Cool Water','Unique'],ins:'Delicate round leaves on arching stems. Needs cool water or it sulks completely.'},
+{name:'Marsilea Hirsuta',sci:'Marsilea hirsuta',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'nano',hard:'all',h:5,hp:0.09,temp:'18-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Four-Leaf Clover',tags:['Clover Shape','Easy Carpet','Unique'],ins:'Four-leaf clover underwater. Lucky enough to grow without CO2.'},
+{name:'Marsilea Crenata',sci:'Marsilea crenata',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'nano',hard:'all',h:4,hp:0.07,temp:'20-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Mini Clover',tags:['Mini Clover','Hardy','Easy'],ins:'Smaller than Hirsuta. Easier to keep low. Double the luck, half the size.'},
+{name:'Isoetes Lacustris',sci:'Isoetes lacustris',diff:'advanced',cat:'carpet',light:'high',co2:'required',size:'small',hard:'soft',h:12,hp:0.22,temp:'10-20°C',ph:'5.5-7.0',co2d:'Required',badge:'Lab-Verified: Quillwort',tags:['Quill-Like','Cool Water','Ancient Plant'],ins:'Living fossil. Plants this ancient deserve respect. And cold water.'},
+{name:'Pilularia Globulifera',sci:'Pilularia globulifera',diff:'intermediate',cat:'carpet',light:'medium',co2:'recommended',size:'nano',hard:'all',h:6,hp:0.11,temp:'15-22°C',ph:'6.5-7.5',co2d:'Recommended',badge:'Lab-Verified: Pillwort',tags:['Unique','European','Cool Water'],ins:'Tiny fern-relative that grows in rows. European oddity that deserves more attention.'},
+{name:'Monosolenium Tenerum',sci:'Monosolenium tenerum',diff:'beginner',cat:'moss',light:'low',co2:'optional',size:'nano',hard:'all',h:3,hp:0.05,temp:'18-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Pellia Substitute',tags:['Sheet Growth','Shrimp Safe','Fragile'],ins:'Grows in sheets like green sushi. Breaks apart easily but regrows everywhere.'},
+{name:'Wisteria Difformis',sci:'Hygrophila difformis',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:40,hp:0.73,temp:'22-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Water Wisteria Clone',tags:['Lacy Leaves','Easy','Fast'],ins:'Same species as Water Wisteria, different leaf form depending on conditions. Adaptive genius.'},
+{name:'Potamogeton Gayi',sci:'Potamogeton gayi',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'large',hard:'all',h:50,hp:0.91,temp:'18-26°C',ph:'6.5-7.5',co2d:'No',badge:'Lab-Verified: Pondweed',tags:['Narrow Leaves','Cool','Background'],ins:'Pondweed that actually looks good in aquariums. The black sheep that works.'},
+{name:'Samolus Valerandi',sci:'Samolus valerandi',diff:'beginner',cat:'stem',light:'medium',co2:'optional',size:'small',hard:'hard',h:12,hp:0.22,temp:'18-26°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Water Pimpernel',tags:['Compact','Hard Water OK','Unusual'],ins:'Compact rosette that tolerates hard water. One of the unsung heroes of planted tanks.'},
+{name:'Micranthemum Umbrosum',sci:'Micranthemum umbrosum',diff:'intermediate',cat:'stem',light:'medium',co2:'recommended',size:'small',hard:'all',h:15,hp:0.27,temp:'20-28°C',ph:'6.0-7.5',co2d:'Recommended',badge:'Lab-Verified: Baby Tears Alternative',tags:['Round Leaves','Dense','Popular'],ins:'Larger than Monte Carlo, easier than HC Cuba. The Goldilocks of baby tear plants.'},
+{name:'Peplis Diandra',sci:'Peplis diandra',diff:'intermediate',cat:'stem',light:'high',co2:'recommended',size:'medium',hard:'soft',h:22,hp:0.4,temp:'20-26°C',ph:'5.5-7.0',co2d:'Recommended',badge:'Lab-Verified: Purple Stem',tags:['Purple','Unusual','Dutch Style'],ins:'Purple stems and delicate leaves. Niche plant for Dutch aquascape enthusiasts.'},
+{name:'Ammannia Latifolia',sci:'Ammannia latifolia',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Broad Ammannia',tags:['Broad Leaves','Red Tones','Demanding'],ins:'Broad red leaves that demand every nutrient you have. Worth the investment.'},
+{name:'Staurogyne Repens Porto Alegre',sci:'Staurogyne sp. \'Porto Alegre\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Porto Variant',tags:['Compact','Green','Demanding'],ins:'Porto Alegre variant. Same creeping habit, slightly different leaf structure.'},
+{name:'Eriocaulon Sp. Broadleaf',sci:'Eriocaulon sp. \'Broadleaf\'',diff:'advanced',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'20-26°C',ph:'5.0-6.5',co2d:'Maximum',badge:'Lab-Verified: Wide Leaf Erio',tags:['Broad Leaves','Unusual','Expert Level'],ins:'Broad-leaved Eriocaulon. Unusual for the genus. Unusual for your sanity.'},
+{name:'Syngonanthus Sp. \'Madeira\'',sci:'Syngonanthus sp. \'Madeira\'',diff:'expert',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:22,hp:0.4,temp:'20-26°C',ph:'4.5-6.0',co2d:'Maximum',badge:'Lab-Verified: Island Pipewort',tags:['Acidic','Rare','Expert Only'],ins:'From the Madeira region. As challenging as the Atlantic winds that name implies.'},
+{name:'Rotala Sp. \'Enie\'',sci:'Rotala sp. \'Enie\'',diff:'expert',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:12,hp:0.22,temp:'20-28°C',ph:'5.5-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Rare Rotala',tags:['Ultra Rare','Pink','Collector\'s Only'],ins:'Extremely rare Rotala variant. Almost impossible to source. Pink perfection.'},
+{name:'Bucephalandra \'Motleyana\'',sci:'Bucephalandra motleyana',diff:'intermediate',cat:'bucephalandra',light:'low',co2:'optional',size:'small',hard:'soft',h:8,hp:0.15,temp:'20-28°C',ph:'6.0-7.5',co2d:'Helps',badge:'Lab-Verified: Species Buce',tags:['True Species','Glossy','Hardy Buce'],ins:'An actual species, not just a cultivar name. Surprisingly accessible for a Buce.'},
+{name:'Cryptocoryne Petchii',sci:'Cryptocoryne petchii',diff:'beginner',cat:'cryptocoryne',light:'low',co2:'optional',size:'small',hard:'all',h:12,hp:0.22,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Sri Lankan Crypt',tags:['Brown-Green','Hardy','Easy Crypt'],ins:'Sri Lankan species. Hardy, adaptable, and refreshingly drama-free for a Crypt.'},
+{name:'Cryptocoryne Thwaitesii',sci:'Cryptocoryne thwaitesii',diff:'intermediate',cat:'cryptocoryne',light:'low',co2:'optional',size:'medium',hard:'soft',h:18,hp:0.33,temp:'22-28°C',ph:'6.0-7.0',co2d:'Optional',badge:'Lab-Verified: Thwaites Crypt',tags:['Unusual','Rare','Sri Lanka'],ins:'Another Sri Lankan gem. Narrower leaves, more sensitivity than Petchii.'},
+{name:'Helanthium Tenellum',sci:'Helanthium tenellum',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'nano',hard:'all',h:7,hp:0.13,temp:'20-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Pygmy Chain Sword',tags:['Tiny','Runners','Foreground'],ins:'Tiny sword that sends runners like it\'s trying to colonize your entire substrate.'},
+{name:'Helanthium Bolivianum',sci:'Helanthium bolivianum',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'small',hard:'all',h:10,hp:0.18,temp:'20-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Bolivian Chain Sword',tags:['Compact','Grassy','Easy'],ins:'Bolivian cousin to the pygmy chain sword. Slightly broader, equally easy.'},
+{name:'Eriocaulon Meyer',sci:'Eriocaulon sp. \'Meyer\'',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'18-26°C',ph:'5.0-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Meyer\'s Erio',tags:['Named Cultivar','Rare','Expert Level'],ins:'Named for the collector who first cultivated it. Their patience is legendary.'},
+{name:'Pogostemon Dassanayakei',sci:'Pogostemon dassanayakei',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:25,hp:0.45,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Sri Lanka Pogo',tags:['Purple Tones','Unusual','Demanding'],ins:'Sri Lankan Pogostemon. Purple-tinted stems in a lesser-known species.'},
+{name:'Lagenandra Thwaitesii',sci:'Lagenandra thwaitesii',diff:'intermediate',cat:'cryptocoryne',light:'low',co2:'optional',size:'medium',hard:'soft',h:20,hp:0.36,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Thwaites Lagenandra',tags:['Crypt Relative','Green','Uncommon'],ins:'Crypt\'s cousin from Sri Lanka. Slower, steadier, and surprisingly handsome.'},
+{name:'Microsorum Pteropus Philippine',sci:'Microsorum pteropus \'Philippines\'',diff:'beginner',cat:'fern',light:'low',co2:'optional',size:'medium',hard:'all',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.5',co2d:'No',badge:'Lab-Verified: Philippine Java Fern',tags:['Wide Leaves','Wavy Edges','Hardy'],ins:'Philippine Java Fern variant. Broader, wavier leaves. Same bulletproof reliability.'},
+{name:'Vesicularia Reticulata',sci:'Vesicularia reticulata',diff:'intermediate',cat:'moss',light:'medium',co2:'optional',size:'nano',hard:'all',h:4,hp:0.07,temp:'18-26°C',ph:'6.0-7.5',co2d:'Helpful',badge:'Lab-Verified: Erect Moss',tags:['Upright Growth','Unique','Dense'],ins:'Grows upright in a grid pattern. Architecture moss. Your shrimp will live in it.'},
+{name:'Neoregelia Ampullacea (Aquatic Form)',sci:'Neoregelia sp.',diff:'intermediate',cat:'fern',light:'medium',co2:'optional',size:'small',hard:'soft',h:10,hp:0.18,temp:'22-28°C',ph:'6.0-7.5',co2d:'Optional',badge:'Lab-Verified: Aquatic Bromeliad',tags:['Unusual','Bromeliad','Rare'],ins:'A bromeliad that goes underwater. Nature has a sense of humor.'},
+{name:'Eleocharis Pusilla',sci:'Eleocharis pusilla',diff:'beginner',cat:'carpet',light:'medium',co2:'optional',size:'nano',hard:'all',h:5,hp:0.09,temp:'18-28°C',ph:'6.5-7.5',co2d:'Optional',badge:'Lab-Verified: Tiny Spikerush',tags:['Mini Hairgrass','Easy','Australian'],ins:'Even smaller than dwarf hairgrass. Australian native that\'s surprisingly easy.'},
+{name:'Rotala Sp. Vietnam',sci:'Rotala sp. \'Vietnam\'',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:25,hp:0.45,temp:'22-28°C',ph:'5.5-7.0',co2d:'Maximum',badge:'Lab-Verified: Vietnam Variant',tags:['Pink-Red','Rare','High Tech'],ins:'Vietnamese Rotala variant. Rare import with striking pink-red coloration.'},
+{name:'Ammannia Praetermissa',sci:'Ammannia praetermissa',diff:'advanced',cat:'stem',light:'high',co2:'required',size:'medium',hard:'soft',h:28,hp:0.51,temp:'22-28°C',ph:'6.0-7.0',co2d:'Required',badge:'Lab-Verified: Overlooked Ammannia',tags:['Magenta','Rare','Demanding'],ins:'The overlooked Ammannia. Magenta coloration that will absolutely make you notice it.'},
+{name:'Tonina Sp. Belem Green',sci:'Syngonanthus sp. \'Belem Green\'',diff:'expert',cat:'stem',light:'high',co2:'required',size:'small',hard:'soft',h:12,hp:0.22,temp:'22-28°C',ph:'5.0-6.5',co2d:'Required',badge:'Lab-Verified: Green Tonina',tags:['Green Form','Rare','Acidic Only'],ins:'Green form of Tonina Belem. Different color, same uncompromising demands.'},
+{name:'Eriocaulon Sp. India',sci:'Eriocaulon sp. \'India\'',diff:'expert',cat:'eriocaulon',light:'high',co2:'required',size:'small',hard:'soft',h:10,hp:0.18,temp:'22-28°C',ph:'5.0-6.5',co2d:'60+ ppm',badge:'Lab-Verified: Indian Erio',tags:['Indian Species','Expert Level','Rare'],ins:'From India\'s soft water streams. Cultural respect required — and RO water.'}];
+
+// ─── RENDER ──────────────────────────────────────────────
+const DIFF_LABEL = {beginner:'Beginner',intermediate:'Intermediate',advanced:'Advanced',expert:'Expert'};
+
+// MAX_H: plants at or above this cm get a full bar (100%)
+const MAX_H = 35;
+
+function makeCard(p, delay){
+  // Linear scale: 0 cm → 0%, MAX_H cm → 100%. Values above MAX_H still show 100%.
+  const barPct = Math.round(Math.min(100, Math.max(0, (p.h / MAX_H) * 100)));
+  const tags = p.tags.map(t=>`<span class="ctag">${t}</span>`).join('');
+  // Label: show "35+ cm" for anything ≥ MAX_H, otherwise exact value
+  const heightLabel = p.h >= MAX_H ? `${p.h}+ cm` : `${p.h} cm`;
+  return `<div class="card ${p.diff}" style="transition-delay:${delay}ms">
+  <div class="cacc"></div>
+  <div class="ci">
+    <div class="ch"><span class="cname">${p.name}</span><span class="cdb">${DIFF_LABEL[p.diff]||p.diff}</span></div>
+    <div class="csci">${p.sci}</div>
+    ${p.ins ? `<div class="cins">${p.ins}</div>` : ''}
+    <div class="cparams">
+      <div class="cparam"><div class="cplbl">Temp</div><div class="cpval">${p.temp}</div></div>
+      <div class="cparam"><div class="cplbl">pH</div><div class="cpval">${p.ph}</div></div>
+      <div class="cparam"><div class="cplbl">Light</div><div class="cpval">${p.light.charAt(0).toUpperCase()+p.light.slice(1)}</div></div>
+      <div class="cparam"><div class="cplbl">CO₂</div><div class="cpval">${p.co2d}</div></div>
+    </div>
+    <div class="hrow">
+      <div class="hrow-top">
+        <span class="hico">↕</span>
+        <span class="hlbl">Height</span>
+        <div class="hbw"><div class="hb" style="--hw:${barPct}%"></div></div>
+        <span class="hval">${heightLabel}</span>
+      </div>
+      <div class="hscale"><span>0 cm</span><span>10 cm</span><span>20 cm</span><span>35+ cm</span></div>
+    </div>
+    <div class="ctags">${tags}</div>
+    <span class="clbadge">${p.badge}</span>
+  </div></div>`;
+}
+
+// ─── FILTERS ─────────────────────────────────────────────
+const DIFFS = ['beginner','intermediate','advanced','expert'];
+let state = {q:'',diff:'all',cat:'all',light:'all',co2:'all',size:'all',hard:'all'};
+
+function getFiltered(){
+  const q = state.q.toLowerCase();
+  return P.filter(p=>{
+    if(state.diff!=='all' && p.diff!==state.diff) return false;
+    if(state.cat!=='all' && p.cat!==state.cat) return false;
+    if(state.light!=='all' && p.light!==state.light) return false;
+    if(state.hard!=='all' && p.hard!==state.hard && p.hard!=='all') return false;
+    if(state.size!=='all' && p.size!==state.size) return false;
+    if(state.co2!=='all'){
+      if(state.co2==='optional' && !['optional','no'].includes(p.co2)) return false;
+      if(state.co2==='recommended' && p.co2!=='recommended') return false;
+      if(state.co2==='required' && p.co2!=='required') return false;
+    }
+    if(q){
+      const hay = (p.name+p.sci+p.tags.join(' ')+p.ins+p.badge).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function render(){
+  const filtered = getFiltered();
+  let total = 0;
+
+  DIFFS.forEach(diff=>{
+    const plants = filtered.filter(p=>p.diff===diff);
+    const grid = document.getElementById('g-'+diff);
+    const pill = document.getElementById('pill-'+diff);
+    const sec = document.getElementById('s-'+diff);
+
+    pill.textContent = plants.length + ' species';
+
+    if(plants.length === 0){
+      grid.innerHTML = '<div class="empty"><strong>No matches</strong>Adjust your filters to see plants.</div>';
+      sec.style.display = 'none';
+    } else {
+      sec.style.display = '';
+      grid.innerHTML = plants.map((p,i)=>makeCard(p, Math.min(i*40, 400))).join('');
+      total += plants.length;
+
+      // restore collapsed state
+      const hd = sec.querySelector('.sec-hd');
+      const body = sec.querySelector('.sec-body');
+      const tog = sec.querySelector('.sec-tog');
+      if(collapsedSecs.has(sec.id)){
+        hd.classList.add('clpsd');body.classList.add('hidden');tog.style.transform='rotate(-90deg)';
+      } else {
+        hd.classList.remove('clpsd');body.classList.remove('hidden');tog.style.transform='';
+      }
+
+      // trigger intersection observer
+      observeCards(grid.querySelectorAll('.card'));
+    }
+  });
+
+  document.getElementById('fcount').textContent = total;
+  document.getElementById('navCount').textContent = total + ' Species';
+  updateLevel(total);
+}
+
+// ─── INTERSECTION OBSERVER ───────────────────────────────
+let obs;
+function observeCards(cards){
+  // Disconnect and recreate so re-filtered cards animate in fresh
+  if(obs) obs.disconnect();
+  obs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');obs.unobserve(e.target)}});
+  },{threshold:.05,rootMargin:'0px 0px -30px 0px'});
+  cards.forEach(c=>obs.observe(c));
+}
+
+// ─── EVENT LISTENERS ─────────────────────────────────────
+let searchT;
+document.getElementById('fsearch').addEventListener('input',e=>{
+  clearTimeout(searchT);
+  searchT = setTimeout(()=>{state.q=e.target.value;render();},200);
+});
+['fdiff','fcat','flight','fco2','fsize','fhard'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',e=>{
+    const map={fdiff:'diff',fcat:'cat',flight:'light',fco2:'co2',fsize:'size',fhard:'hard'};
+    state[map[id]]=e.target.value;render();
+  });
+});
+function resetAll(){
+  state={q:'',diff:'all',cat:'all',light:'all',co2:'all',size:'all',hard:'all'};
+  document.getElementById('fsearch').value='';
+  ['fdiff','fcat','flight','fco2','fsize','fhard'].forEach(id=>document.getElementById(id).value='all');
+  render();
+}
+
+// ─── SECTION TOGGLE ──────────────────────────────────────
+const collapsedSecs = new Set();
+function toggleSec(hd){
+  const body = hd.nextElementSibling;
+  const tog = hd.querySelector('.sec-tog');
+  const secId = hd.closest('.section').id;
+  const isClpsd = hd.classList.contains('clpsd');
+  if(isClpsd){hd.classList.remove('clpsd');body.classList.remove('hidden');tog.style.transform='';collapsedSecs.delete(secId)}
+  else{hd.classList.add('clpsd');body.classList.add('hidden');tog.style.transform='rotate(-90deg)';collapsedSecs.add(secId)}
+}
+
+// ─── SCROLL PROGRESS ─────────────────────────────────────
+window.addEventListener('scroll',function(){
+  const pct=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight)*100;
+  const bar=document.getElementById('pdBar');
+  if(bar) bar.style.width=Math.min(100,Math.max(0,pct))+'%';
+},{passive:true});
+
+// ─── LEVEL BADGE ─────────────────────────────────────────
+const LEVELS=[
+  {t:250,name:'Master',c:'#f56565'},
+  {t:160,name:'Designer',c:'#f5a623'},
+  {t:80,name:'Builder',c:'#5ab0f7'},
+  {t:0,name:'Explorer',c:'#22d49a'},
+];
+function updateLevel(n){
+  const lv = LEVELS.find(l=>n>=l.t)||LEVELS[LEVELS.length-1];
+  const el=document.getElementById('lvl');
+  el.innerHTML='Level: <strong style="color:'+lv.c+'">'+lv.name+'</strong>';
+}
+
+// ─── COUNTER ANIM ─────────────────────────────────────────
+function animCount(el,end,sfx=''){
+  let start=0,dur=900,step=Math.ceil(dur/60);
+  const inc=end/step;
+  const t=setInterval(()=>{
+    start=Math.min(start+inc,end);
+    el.textContent=Math.round(start)+(sfx||'');
+    if(start>=end)clearInterval(t);
+  },dur/step);
+}
+const cobs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      animCount(e.target,+e.target.dataset.end,e.target.dataset.sfx||'');
+      cobs.unobserve(e.target);
+    }
+  });
+},{threshold:.1});
+document.querySelectorAll('.snum').forEach(el=>cobs.observe(el));
+
+// ─── INIT ─────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
